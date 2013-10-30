@@ -21,18 +21,18 @@ sudo apt-get install -y lxc tcpdump
 
 wget -O ubuntu.tgz http://goo.gl/Ze7hYz
 wget -O container.tgz http://goo.gl/XJgdtf
-wget -O svpn.tgz http://goo.gl/Sg4Vh2
+wget -O ipop.tgz http://goo.gl/4ecwqn
 
-sudo tar xzf ubuntu.tgz; tar xzf container.tgz; tar xzf svpn.tgz
+sudo tar xzf ubuntu.tgz; tar xzf container.tgz; tar xzf ipop.tgz
 sudo cp -a ubuntu/* container/rootfs/
 sudo mv container/home/ubuntu container/rootfs/home/ubuntu/
-mv svpn container/rootfs/home/ubuntu/svpn/
+mv ipop container/rootfs/home/ubuntu/ipop/
 
 STUN="stun.l.google.com:19302"
 TURN=""
 TURN_USER=""
 TURN_PASS=""
-for i in `ls container/rootfs/home/ubuntu/svpn/*.py`
+for i in `ls container/rootfs/home/ubuntu/ipop/*.py`
 do
     sed -i "s/STUN = .*/STUN = \"$STUN\"/g" $i
     sed -i "s/TURN = .*/TURN = \"$TURN\"/g" $i
@@ -47,9 +47,9 @@ fi
 
 cat > $START_PATH << EOF
 #!/bin/bash
-SVPN_HOME=/home/ubuntu/svpn
+SVPN_HOME=/home/ubuntu/ipop
 CONFIG=\`cat \$SVPN_HOME/config\`
-\$SVPN_HOME/svpn-jingle &> \$SVPN_HOME/svpn_log.txt &
+\$SVPN_HOME/ipop-tincan &> \$SVPN_HOME/svpn_log.txt &
 python \$SVPN_HOME/$CONTROLLER \$CONFIG &> \$SVPN_HOME/controller_log.txt &
 EOF
 
@@ -66,12 +66,12 @@ do
     sudo cp -a container $container_name
 
     echo -n "$USERNAME $PASSWORD $XMPP_HOST $IP_PREFIX.$i" > \
-             $container_name/rootfs/home/ubuntu/svpn/config
+             $container_name/rootfs/home/ubuntu/ipop/config
 
     if [ "x$MODE" = "xsvpn" ]
     then
         echo -n "$USERNAME $PASSWORD $XMPP_HOST" > \
-                 $container_name/rootfs/home/ubuntu/svpn/config
+                 $container_name/rootfs/home/ubuntu/ipop/config
     fi
 
     sudo mv $container_name $lxc_path
