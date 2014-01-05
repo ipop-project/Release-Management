@@ -105,12 +105,38 @@ do
 
   sudo sed -i "s/\"ip4\":.*/\"ip4\": \"${IP[0]}.${IP[1]}.${IP[2]}.$((${IP[3]}+$i))\",/g" $container_path/rootfs/home/ubuntu/config.json
  
+
+  #If your lxc version is less than version 1.0 uncomments below script and comment out the below sucl lxc-attach part
+  #sudo bash -c "echo lxc.network.ipv4 = 10.0.3.$(($i+2)) >> $container_path/config"
+  #sudo sed 's/^lxc.network.ipv4/lxc.network.ipv4 = 10.0.3.$(($i+2))/g' $container_path/config
+  """
+  if sudo grep -q "^lxc.network.ipv4" $container_path/config
+  then 
+    sudo sed -i "s/^lxc.network.ipv4.*/lxc.network.ipv4 = 10.0.3.$(($i+2))/g" $container_path/config
+  else
+    sudo bash -c "echo \"lxc.network.ipv4 = 10.0.3.$(($i+2))\" >> $container_path/config"
+  fi 
+  sudo mkdir -p $container_path/rootfs/home/ubuntu/.ssh
+  sudo bash -c "/bin/cat ~/.ssh/id_rsa.pub >> $container_path/rootfs/home/ubuntu/.ssh/authorized_keys"
   sudo lxc-start -d -n $PREFIX$i 
-  sleep 5
+  sleep 1 #Wait till lxc instances boot up
+
+  #This removes registered keys and register a new one.
+  ssh-keygen -R 10.0.3.$(($i+2)) 1> /dev/null 2> /dev/null
+  ssh-keyscan -H -t ecdsa-sha2-nistp256 10.0.3.$(($i+2)) 2> /dev/null 1>> $HOME/.ssh/known_hosts
+
+  #This enables run binary which requires sudo previlege run without asking password and tty.
+  sudo bash -c "echo \"ubuntu ALL = NOPASSWD: /home/ubuntu/run.sh\" >> $container_path/rootfs/etc/sudoers"
+  sudo bash -c "echo \"ubuntu ALL = NOPASSWD: /home/ubuntu/ipop-tincan-x86_64\" >> $container_path/rootfs/etc/sudoers"
+
+  ssh -l ubuntu 10.0.3.$(($i+2)) /home/ubuntu/run.sh 
+  """
 
   #lxc-attach is not supported for all linux packages
   #If below is not supproted, I recommend to use ssh
+  sudo lxc-start -d -n $PREFIX$i 
   sudo lxc-attach -n $PREFIX$i /home/ubuntu/run.sh 
+
 done
 
 }
