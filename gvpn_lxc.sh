@@ -138,6 +138,7 @@ do
 
   #lxc-attach is not supported for all linux packages
   sudo lxc-start -d -n $PREFIX$i 
+  sleep 5 #Wait till lxc instances boot up, should be longer if your machine is slow
   sudo lxc-attach -n $PREFIX$i /home/ubuntu/run.sh 
 
 done
