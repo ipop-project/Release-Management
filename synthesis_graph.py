@@ -24,5 +24,5 @@ for i in g.nodes():
   subprocess.call(["sudo", "ejabberdctl", "register", str(i), "ejabberd", str(i)])
 
 for i in g.edges():
-  subprocess.call(["sudo", "ejabberdctl", "add_roisteritem", str(i[0]), "ejabberd", str(i[1]), "ejabberd", str(i[1]), "friends", both])
+  subprocess.call(["sudo", "ejabberdctl", "add_rosteritem", str(i[0]), "ejabberd", str(i[1]), "ejabberd", str(i[1]), "friends", "both"])
 
