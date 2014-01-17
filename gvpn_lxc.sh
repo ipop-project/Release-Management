@@ -5,18 +5,27 @@ cat <<-ENDOFMESSAGE
 options:
   -m Operation mode 
     1 -- Creating instances
-    2 -- Copy binaries to instances and run IPOP
-    3 -- Run Simple Test
+    2 -- Copy binaries to instances and run IPOP and GroupVPN
+    3 -- Copy binaries to instances and run IPOP and SocialVPN
+    4 -- Stop LXC instances 
+    5 -- Destroy LXC instances 
   -p Prefix | Specify lxc instance name prefix
   -i Specify instance count
 
 Examples:
-  Creating Instances with prefix
-    ./gvpn_lxc -m 1 -p prefix -i 5
-    Creating lxc instances with names "prefix0" "refix1" ... "prefix4"
-  Copy ipop-tincan binary and controllers and configure IP for node
-    ./gvpn_lxc -m 2 -p prefix -i 5 -a 172.16.1.1
-    LXC instance will have ipop node with IP address 172.16.1.1, 172.16.1.2, ...
+  - Creating Instances with prefix
+      ./gvpn_lxc -m 1 -p ipop -i 5
+      Creating lxc instances with names "ipop0" "ipop1" ... "ipop4"
+  - Copy ipop-tincan binary and GroupVPN controllers and configure IP for node
+      ./gvpn_lxc -m 2 -p ipop -i 5 -a 172.16.1.1
+      LXC instance will have ipop node with IP address 172.16.1.1, 172.16.1.2, ...
+  - Copy ipop-tincan binary and SocialVPN controllers and configure user ID and password
+      ./gvpn_lxc -m 3 -p ipop -i 5 -a 0
+      LXC instance with SocialVPN 0@ejabberd, 1@ejabberd, 2@ejabberd ...
+  - Stop/Destroy LXC instances  
+      ./gvpn_lxc -m 4 -p ipop -i 5 
+      ./gvpn_lxc -m 5 -p ipop -i 5 
+      Stop/Destroy LXC instance with name ipop0, ipop1, ... ipop4
   
 ENDOFMESSAGE
 exit 1
@@ -57,6 +66,13 @@ sudo chroot /var/lib/lxc/${PREFIX}0/rootfs mkdir /dev/net
 sudo chroot /var/lib/lxc/${PREFIX}0/rootfs mknod /dev/net/tun c 10 200
 sudo chroot /var/lib/lxc/${PREFIX}0/rootfs chmod 666 /dev/net/tun
 
+sudo bash -c "cat > /var/lib/lxc/${PREFIX}0/rootfs/etc/rc.local << EOF
+#!/bin/sh -e
+/home/ubuntu/run.sh
+exit 0
+EOF
+"
+
 for ((i=1; i<$COUNT; i++))
 do
   container_path=$lxc_path/$PREFIX$i
@@ -76,14 +92,30 @@ PREFIX=$1
 COUNT=$2
 ADDR=$3
 lxc_path=/var/lib/lxc
-IP=(${ADDR//./ })
+VPN_MODE=$4
+if [ "$VPN_MODE" == "GVPN" ]
+then 
+  IP=(${ADDR//./ })
+else 
+  ID=$ADDR
+fi
 
+if [ "$VPN_MODE" == "GVPN" ]
+then
 cat > run.sh << EOF
 #!/usr/bin/env bash
 cd /home/ubuntu
 sudo ./ipop-tincan-x86_64 &> tincan.log &
 ./gvpn_controller.py -c config.json &> controller.log &
 EOF
+else
+cat > run.sh << EOF
+#!/usr/bin/env bash
+cd /home/ubuntu
+sudo ./ipop-tincan-x86_64 &> tincan.log &
+./svpn_controller.py -c config.json &> controller.log &
+EOF
+fi
 
 sudo chmod +x run.sh
 
@@ -103,8 +135,14 @@ do
   sudo cp svpn_controller.py $container_path/rootfs/home/ubuntu/
   sudo cp run.sh $container_path/rootfs/home/ubuntu/
 
-  sudo sed -i "s/\"ip4\":.*/\"ip4\": \"${IP[0]}.${IP[1]}.${IP[2]}.$((${IP[3]}+$i))\",/g" $container_path/rootfs/home/ubuntu/config.json
- 
+  if [ "$VPN_MODE" == "GVPN" ]
+  then 
+    sudo sed -i "s/\"ip4\":.*/\"ip4\": \"${IP[0]}.${IP[1]}.${IP[2]}.$((${IP[3]}+$i))\",/g" $container_path/rootfs/home/ubuntu/config.json
+  else 
+    sudo sed -i "s/\"xmpp_username\":.*/\"xmpp_username\": \"$(($ID+$i))@ejabberd\",/g" $container_path/rootfs/home/ubuntu/config.json
+    sudo sed -i "s/\"xmpp_password\":.*/\"xmpp_password\": \"$(($ID+$i))\",/g" $container_path/rootfs/home/ubuntu/config.json
+  fi
+
 
   #############################################
   # FOR LXC LESS THAN 1.0
@@ -138,11 +176,34 @@ do
 
   #lxc-attach is not supported for all linux packages
   sudo lxc-start -d -n $PREFIX$i 
-  sleep 5 #Wait till lxc instances boot up, should be longer if your machine is slow
-  sudo lxc-attach -n $PREFIX$i /home/ubuntu/run.sh 
+  #sleep 5 #Wait till lxc instances boot up, should be longer if your machine is slow
+  #sudo lxc-attach -n $PREFIX$i /home/ubuntu/run.sh 
+  echo "Started instance $PREFIX$i"
 
 done
+}
 
+function stop_ {
+
+PREFIX=$1
+COUNT=$2
+
+for ((i=0; i<$COUNT; i++))
+do 
+  echo "Stopping $PREFIX$i"
+  sudo lxc-stop -n $PREFIX$i
+done
+}
+
+function destroy {
+PREFIX=$1
+COUNT=$2
+
+for ((i=0; i<$COUNT; i++))
+do 
+  echo "Destroying $PREFIX$i"
+  sudo lxc-destroy -n $PREFIX$i
+done
 }
 
 TEMP=`getopt -o m:p:i:a: -- "$@"`
@@ -161,6 +222,9 @@ done
 
 case $MODE in 
   1) create_instances $PREFIX $COUNT; exit 1;;
-  2) copy $PREFIX $COUNT $ADDR; exit 1;;
+  2) copy $PREFIX $COUNT $ADDR "GVPN"; exit 1;;
+  3) copy $PREFIX $COUNT $ADDR "SVPN"; exit 1;;
+  4) stop_ $PREFIX $COUNT; exit 1;;
+  5) destroy $PREFIX $COUNT; exit 1;;
   *) echo "Unknown operation mode"; Usage; exit 1;;
 esac
