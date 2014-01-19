@@ -118,6 +118,9 @@ EOF
 fi
 
 sudo chmod +x run.sh
+sudo chmod +x ipop-tincan-x86_64
+sudo chmod +x gvpn_controller.py
+sudo chmod +x svpn_controller.py
 
 for ((i=0; i<$COUNT; i++))
 do
