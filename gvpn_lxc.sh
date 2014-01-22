@@ -84,6 +84,7 @@ do
   fi
 
   sudo lxc-clone -o ${PREFIX}0 -n $PREFIX$i
+  sudo sed -i "s/${PREFIX}0/$PREFIX$i/g" $container_path/rootfs/etc/hosts
 done
 }
 
