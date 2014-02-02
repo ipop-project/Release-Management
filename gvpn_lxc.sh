@@ -107,6 +107,17 @@ cat > run.sh << EOF
 #!/usr/bin/env bash
 cd /home/ubuntu
 sudo ./ipop-tincan-x86_64 &> tincan.log &
+#Make sure the UDP socket is created at tincan first
+#If O/S overloaded, there is possibility of controller
+#starting socket connection first.
+netstat -lun | grep -q "::1:5800"
+asdf=\$?
+while [ 1 -eq \$asdf ]
+do
+  netstat -lun | grep -q "::1:5800"
+  asdf=\$?
+  sleep 1
+done
 ./gvpn_controller.py -c config.json &> controller.log &
 EOF
 else
@@ -114,6 +125,17 @@ cat > run.sh << EOF
 #!/usr/bin/env bash
 cd /home/ubuntu
 sudo ./ipop-tincan-x86_64 &> tincan.log &
+#Make sure the UDP socket is created at tincan first
+#If O/S overloaded, there is possibility of controller
+#starting socket connection first.
+netstat -lun | grep -q "::1:5800"
+asdf=\$?
+while [ 1 -eq \$asdf ]
+do
+  netstat -lun | grep -q "::1:5800"
+  asdf=\$?
+  sleep 1
+done
 ./svpn_controller.py -c config.json &> controller.log &
 EOF
 fi
