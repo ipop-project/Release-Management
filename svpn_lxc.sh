@@ -13,12 +13,12 @@ CONTROLLER=svpn_controller.py
 START_PATH=container/rootfs/home/ubuntu/start.sh
 
 sudo apt-get update
-sudo apt-get install -y lxc tcpdump
+sudo apt-get install -y lxc
 
 wget -O ubuntu.tgz http://goo.gl/Ze7hYz
 wget -O container.tgz http://goo.gl/XJgdtf
 
-sudo tar xzf ubuntu.tgz; tar xzf container.tgz; tar xzf ipop.tgz
+sudo tar xzf ubuntu.tgz; tar xzf container.tgz
 sudo cp -a ubuntu/* container/rootfs/
 sudo mv container/home/ubuntu container/rootfs/home/ubuntu/
 mv ipop container/rootfs/home/ubuntu/ipop/
@@ -31,8 +31,6 @@ python \$SVPN_HOME/$CONTROLLER -c \$SVPN_HOME/config.json &> \$SVPN_HOME/control
 EOF
 
 chmod 755 $START_PATH
-
-#sudo tcpdump -i lxcbr0 -w dump_$HOST.cap &> /dev/null &
 
 lxc_path=/var/lib/lxc
 sudo chmod 755 $lxc_path
