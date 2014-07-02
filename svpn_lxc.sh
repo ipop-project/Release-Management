@@ -39,7 +39,7 @@ for i in $(seq $CONTAINER_START $CONTAINER_END)
 do
     container_name=container$i
     container_path=$lxc_path/$container_name
-    config_path=$container_name/rootfs/home/ubuntu/config.json
+    config_path=$container_name/rootfs/home/ubuntu/ipop/config.json
 
     sudo cp -a container $container_name
 
