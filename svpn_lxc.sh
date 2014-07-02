@@ -39,9 +39,11 @@ for i in $(seq $CONTAINER_START $CONTAINER_END)
 do
     container_name=container$i
     container_path=$lxc_path/$container_name
+    config_path=$container_name/rootfs/home/ubuntu/config.json
 
     sudo cp -a container $container_name
 
+    sed -i "s/\"xmpp_username\":.*/\"xmpp_username\": \"user$i@ejabberd\",/g" $config_path
     sudo mv $container_name $lxc_path
     sudo echo "lxc.rootfs = $container_path/rootfs" >> $container_path/config
     sudo echo "lxc.mount = $container_path/fstab" >> $container_path/config
