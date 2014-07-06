@@ -3,6 +3,8 @@
 source $HOME/.futuregrid/novarc
 module load novaclient
 
+IMAGE="futuregrid/ubuntu-14.04"
+
 function Usage() {
 cat <<-ENDOFMESSAGE
 options:
@@ -43,7 +45,7 @@ exit 1
 function xmpp {
 NODES=$1
 echo "Creating XMPP Server (Instance name \"XMPP\")"
-ID=`nova boot --flavor m1.small --image "futuregrid/ubuntu-13.10" --key_name $USER-key XMPP | awk '{if (match($0,/'" id "'/)){print $4}}'`
+ID=`nova boot --flavor m1.small --image $IMAGE --key_name $USER-key XMPP | awk '{if (match($0,/'" id "'/)){print $4}}'`
 echo "Created instance ID is $ID"
 sleep 60
 XMPP_IP=`nova list | grep "$ID" | awk -F'[=|]' '{print $6}' | tr -d ' '`
@@ -96,7 +98,7 @@ LXC_COUNT=$2
 for ((i=0; i<$VM_COUNT; i++))
 do
   echo "Creating IPOP VM (Instance name prefix is \"IPOP\" such as \"IPOP0\", \"IPOP1\", \"IPOP2\", ...)" 1>&2
-  ID=`nova boot --flavor m1.medium --image "futuregrid/ubuntu-13.10" --key_name $USER-key IPOP$i | awk '{if (match($0,/'" id "'/)){print $4}}'`
+  ID=`nova boot --flavor m1.medium --image $IMAGE --key_name $USER-key IPOP$i | awk '{if (match($0,/'" id "'/)){print $4}}'`
   echo "Created instance (IPOP$i, Instance ID is $ID)" 1>&2
   sleep 60
   VM_IP=`nova list | grep "$ID" | awk -F'[=|]' '{print $6}' | tr -d ' '`
