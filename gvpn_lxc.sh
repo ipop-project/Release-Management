@@ -40,7 +40,7 @@ CONTROLLER=gvpn_controller.py
 
 #Check whether lxc is installed
 #if not, install it
-if ! dpkg -l lxc >> /dev/null 2>&1 
+if ! dpkg -s lxc >> /dev/null 2>&1 
 then 
   echo "LXC Package is not installed"
   sudo apt-get update
