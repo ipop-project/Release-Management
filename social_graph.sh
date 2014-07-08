@@ -29,11 +29,12 @@ Examples:
     ./social_graph.sh -m 3 -i "10.35.23.165,10.35.23.178" -l 50 -p "SVPN"
     Each VM instance with IP address 10.35.23.165 and 10.35.23.178 contain
     50 LXC instances each. Don't put space between IP address.
-    Before run, place ipop-tincan-x86_64, either of svpn/gvpn_controller.py, 
-    config.json files at your working directory. These must have exactly the
-    same file name. config.json file should have proper XMPP, STUN, TURN 
-    configuration. But, xmpp_username, xmpp_password(for SocialVPN) or 
-    IP address (GroupVPN) will be assigned automatically.
+    Before run, place ipop-tincan-x86_64, ipoplib.py and either of 
+    svpn/gvpn_controller.py, config.json files at your working directory. 
+    These must have exactly the same file name. config.json file should 
+    have proper XMPP, STUN, TURN configuration. But, xmpp_username, 
+    xmpp_password(for SocialVPN) or IP address (GroupVPN) will be assigned 
+    automatically.
   Stop depolyed instances
     ./social_graph.sh -m 4 -i "10.35.23.165,10.35.23.178" -l 50 
      
