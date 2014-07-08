@@ -4,6 +4,7 @@ source $HOME/.futuregrid/novarc
 module load novaclient
 
 IMAGE="futuregrid/ubuntu-14.04"
+KEY_NAME="public_key"
 
 function Usage() {
 cat <<-ENDOFMESSAGE
@@ -17,6 +18,14 @@ options:
   -i IP address list
   -l lxc instance number 
   -p VPN Mode "SVPN" or "GVPN"
+
+Prerequisite:
+  Add your public key in nova keypair-lsit
+    ./nova keypair-list 
+    ./nova keypair-add --pub_key ~/.ssh/id_rsa.pub public_key
+  If you already registered your public in nova keypair-list with different 
+  key name with "public_key" then you should change above "KEY_NAME" 
+  variable to match with your public key name. 
 
 Examples:
   Create and configure XMPP instance with 2000 nodes
@@ -46,7 +55,7 @@ exit 1
 function xmpp {
 NODES=$1
 echo "Creating XMPP Server (Instance name \"XMPP\")"
-ID=`nova boot --flavor m1.small --image $IMAGE --key_name $USER-key XMPP | awk '{if (match($0,/'" id "'/)){print $4}}'`
+ID=`nova boot --flavor m1.small --image $IMAGE --key_name $KEY_NAME XMPP | awk '{if (match($0,/'" id "'/)){print $4}}'`
 echo "Created instance ID is $ID"
 sleep 60
 XMPP_IP=`nova list | grep "$ID" | awk -F'[=|]' '{print $6}' | tr -d ' '`
@@ -57,24 +66,24 @@ nova list
 sed -i "/$XMPP_IP/d" $HOME/.ssh/known_hosts
 
 #If the host name is not specified in /etc/hosts, ejabberdctl intermittently cannot interface with ejabberd
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "sudo sed -i \"2i $XMPP_IP xmpp\" /etc/hosts"
+ssh -l ubuntu $XMPP_IP "sudo sed -i \"2i $XMPP_IP xmpp\" /etc/hosts"
 
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "sudo apt-get update"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "sudo apt-get -y install ejabberd unzip python-setuptools"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "wget -q -O ejabberd.cfg http://goo.gl/iObOjl"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "sudo cp ejabberd.cfg /etc/ejabberd/"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "sudo service ejabberd restart"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "wget https://pypi.python.org/packages/source/n/networkx/networkx-1.9.tar.gz#md5=683ca697a9ad782cb78b247cbb5b51d6"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "tar xzvf networkx-1.9.tar.gz 1> /dev/null"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "cp -r networkx-1.9/networkx ." 
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "wget -q http://current.cs.ucsb.edu/socialmodels/code/fittingCode.zip"  
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "unzip fittingCode.zip 1> /dev/null" 
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "cp fittingCode/socialModels.py ."
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "sudo easy_install decorator"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "wget -q https://github.com/ipop-project/ipop-scripts/raw/master/synthesis_graph.py" 
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "chmod +x synthesis_graph.py"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "sed -i \"s/2000/$NODES/g\" synthesis_graph.py"
-ssh -l ubuntu $XMPP_IP -i $HOME/.ssh/$USER-key "./synthesis_graph.py"
+ssh -l ubuntu $XMPP_IP "sudo apt-get update"
+ssh -l ubuntu $XMPP_IP "sudo apt-get -y install ejabberd unzip python-setuptools"
+ssh -l ubuntu $XMPP_IP "wget -q -O ejabberd.cfg http://goo.gl/iObOjl"
+ssh -l ubuntu $XMPP_IP "sudo cp ejabberd.cfg /etc/ejabberd/"
+ssh -l ubuntu $XMPP_IP "sudo service ejabberd restart"
+ssh -l ubuntu $XMPP_IP "wget https://pypi.python.org/packages/source/n/networkx/networkx-1.9.tar.gz#md5=683ca697a9ad782cb78b247cbb5b51d6"
+ssh -l ubuntu $XMPP_IP "tar xzvf networkx-1.9.tar.gz 1> /dev/null"
+ssh -l ubuntu $XMPP_IP "cp -r networkx-1.9/networkx ." 
+ssh -l ubuntu $XMPP_IP "wget -q http://current.cs.ucsb.edu/socialmodels/code/fittingCode.zip"  
+ssh -l ubuntu $XMPP_IP "unzip fittingCode.zip 1> /dev/null" 
+ssh -l ubuntu $XMPP_IP "cp fittingCode/socialModels.py ."
+ssh -l ubuntu $XMPP_IP "sudo easy_install decorator"
+ssh -l ubuntu $XMPP_IP "wget -q https://github.com/ipop-project/ipop-scripts/raw/master/synthesis_graph.py" 
+ssh -l ubuntu $XMPP_IP "chmod +x synthesis_graph.py"
+ssh -l ubuntu $XMPP_IP "sed -i \"s/2000/$NODES/g\" synthesis_graph.py"
+ssh -l ubuntu $XMPP_IP "./synthesis_graph.py"
 }
 
 function deploy_lxc {
@@ -83,11 +92,11 @@ VM_IP=$0
 LXC_COUNT=$1
 
 echo "deploying $LXC_COUNT lxc instances at $VM_IP "
-ssh -l ubuntu $VM_IP -i $HOME/.ssh/$USER-key "sudo apt-get update"
-ssh -l ubuntu $VM_IP -i $HOME/.ssh/$USER-key "sudo apt-get -y lxc"
-ssh -l ubuntu $VM_IP -i $HOME/.ssh/$USER-key "wget http://github.com/ipop-project/ipop-scripts/raw/master/gvpn_lxc.sh"
-ssh -l ubuntu $VM_IP -i $HOME/.ssh/$USER-key "chmod +x gvpn_lxc.sh"
-ssh -l ubuntu $VM_IP -i $HOME/.ssh/$USER-key "sudo ./gvpn_lxc.sh -m 1 -p IPOP -i $LXC_COUNT"
+ssh -l ubuntu $VM_IP "sudo apt-get update"
+ssh -l ubuntu $VM_IP "sudo apt-get -y lxc"
+ssh -l ubuntu $VM_IP "wget http://github.com/ipop-project/ipop-scripts/raw/master/gvpn_lxc.sh"
+ssh -l ubuntu $VM_IP "chmod +x gvpn_lxc.sh"
+ssh -l ubuntu $VM_IP "sudo ./gvpn_lxc.sh -m 1 -p IPOP -i $LXC_COUNT"
 
 }
 export -f deploy_lxc
@@ -100,7 +109,7 @@ LXC_COUNT=$2
 for ((i=0; i<$VM_COUNT; i++))
 do
   echo "Creating IPOP VM (Instance name prefix is \"IPOP\" such as \"IPOP0\", \"IPOP1\", \"IPOP2\", ...)" 1>&2
-  ID=`nova boot --flavor m1.medium --image $IMAGE --key_name $USER-key IPOP$i | awk '{if (match($0,/'" id "'/)){print $4}}'`
+  ID=`nova boot --flavor m1.medium --image $IMAGE --key_name $KEY_NAME IPOP$i | awk '{if (match($0,/'" id "'/)){print $4}}'`
   echo "Created instance (IPOP$i, Instance ID is $ID)" 1>&2
   sleep 60
   VM_IP=`nova list | grep "$ID" | awk -F'[=|]' '{print $6}' | tr -d ' '`
@@ -130,10 +139,10 @@ do
   if [ "$VPN_MODE" == "GVPN" ] 
   then 
     scp -i $HOME/.ssh/kyuhojeong-key gvpn_controller.py ubuntu@${IP_ARRAY[$i]}:
-    ssh -l ubuntu ${IP_ARRAY[$i]} -i $HOME/.ssh/$USER-key "./gvpn_lxc.sh -m 2 -p IPOP -i $LXC_COUNT -a 172.16.$i.1"
+    ssh -l ubuntu ${IP_ARRAY[$i]} "./gvpn_lxc.sh -m 2 -p IPOP -i $LXC_COUNT -a 172.16.$i.1"
   else 
     scp -i $HOME/.ssh/kyuhojeong-key svpn_controller.py ubuntu@${IP_ARRAY[$i]}:
-    ssh -l ubuntu ${IP_ARRAY[$i]} -i $HOME/.ssh/$USER-key "./gvpn_lxc.sh -m 3 -p IPOP -i $LXC_COUNT -a $(($i*$LXC_COUNT))"
+    ssh -l ubuntu ${IP_ARRAY[$i]} "./gvpn_lxc.sh -m 3 -p IPOP -i $LXC_COUNT -a $(($i*$LXC_COUNT))"
   fi
 done
 
@@ -149,7 +158,7 @@ echo "stop instances $IP_LIST $LXC_COUNT"
 IP_ARRAY=(${IP_LIST//,/ })
 for i in "${!IP_ARRAY[@]}"
 do
-  ssh -l ubuntu ${IP_ARRAY[$i]} -i $HOME/.ssh/$USER-key "./gvpn_lxc.sh -m 4 -p IPOP -i $LXC_COUNT"
+  ssh -l ubuntu ${IP_ARRAY[$i]} "./gvpn_lxc.sh -m 4 -p IPOP -i $LXC_COUNT"
 done
 }
 
