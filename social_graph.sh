@@ -133,15 +133,15 @@ echo "copy and run $IP_LIST $LXC_COUNT $VPN_MODE"
 IP_ARRAY=(${IP_LIST//,/ })
 for i in "${!IP_ARRAY[@]}"
 do
-  scp -i $HOME/.ssh/kyuhojeong-key ipop-tincan-x86_64 ubuntu@${IP_ARRAY[$i]}:
-  scp -i $HOME/.ssh/kyuhojeong-key config.json ubuntu@${IP_ARRAY[$i]}:
-  scp -i $HOME/.ssh/kyuhojeong-key ipoplib.py ubuntu@${IP_ARRAY[$i]}:
+  scp ipop-tincan-x86_64 ubuntu@${IP_ARRAY[$i]}:
+  scp config.json ubuntu@${IP_ARRAY[$i]}:
+  scp ipoplib.py ubuntu@${IP_ARRAY[$i]}:
   if [ "$VPN_MODE" == "GVPN" ] 
   then 
-    scp -i $HOME/.ssh/kyuhojeong-key gvpn_controller.py ubuntu@${IP_ARRAY[$i]}:
+    scp gvpn_controller.py ubuntu@${IP_ARRAY[$i]}:
     ssh -l ubuntu ${IP_ARRAY[$i]} "./gvpn_lxc.sh -m 2 -p IPOP -i $LXC_COUNT -a 172.16.$i.1"
   else 
-    scp -i $HOME/.ssh/kyuhojeong-key svpn_controller.py ubuntu@${IP_ARRAY[$i]}:
+    scp svpn_controller.py ubuntu@${IP_ARRAY[$i]}:
     ssh -l ubuntu ${IP_ARRAY[$i]} "./gvpn_lxc.sh -m 3 -p IPOP -i $LXC_COUNT -a $(($i*$LXC_COUNT))"
   fi
 done
