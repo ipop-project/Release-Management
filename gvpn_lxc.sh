@@ -157,6 +157,7 @@ do
 
   sudo cp ipop-tincan-x86_64 $container_path/rootfs/home/ubuntu/
   sudo cp config.json $container_path/rootfs/home/ubuntu/
+  sudo cp ipoplib.py $container_path/rootfs/home/ubuntu/
   sudo cp gvpn_controller.py $container_path/rootfs/home/ubuntu/
   sudo cp svpn_controller.py $container_path/rootfs/home/ubuntu/
   sudo cp run.sh $container_path/rootfs/home/ubuntu/
