@@ -126,6 +126,7 @@ for i in "${!IP_ARRAY[@]}"
 do
   scp -i $HOME/.ssh/kyuhojeong-key ipop-tincan-x86_64 ubuntu@${IP_ARRAY[$i]}:
   scp -i $HOME/.ssh/kyuhojeong-key config.json ubuntu@${IP_ARRAY[$i]}:
+  scp -i $HOME/.ssh/kyuhojeong-key ipoplib.py ubuntu@${IP_ARRAY[$i]}:
   if [ "$VPN_MODE" == "GVPN" ] 
   then 
     scp -i $HOME/.ssh/kyuhojeong-key gvpn_controller.py ubuntu@${IP_ARRAY[$i]}:
