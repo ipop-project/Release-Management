@@ -4,7 +4,7 @@ source $HOME/.futuregrid/novarc
 module load novaclient
 
 IMAGE="futuregrid/ubuntu-14.04"
-KEY_NAME="public_key"
+KEY_NAME="public-key"
 
 function Usage() {
 cat <<-ENDOFMESSAGE
@@ -24,7 +24,7 @@ Prerequisite:
     ./nova keypair-list 
     ./nova keypair-add --pub_key ~/.ssh/id_rsa.pub public_key
   If you already registered your public in nova keypair-list with different 
-  key name with "public_key" then you should change above "KEY_NAME" 
+  key name with "public-key" then you should change above "KEY_NAME" 
   variable to match with your public key name. 
 
 Examples:
