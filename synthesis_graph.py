@@ -5,7 +5,7 @@ import socialModels as sm
 import subprocess 
 import sys
 
-g = nx.barabasi_albert_graph(200, 2)
+g = nx.barabasi_albert_graph(2000, 2)
 #g = sm.nearestNeighbor_mod(2000, 0.1, 1)
 
 nodes = g.number_of_nodes()
