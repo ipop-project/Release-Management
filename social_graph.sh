@@ -55,7 +55,7 @@ exit 1
 function xmpp {
 NODES=$1
 echo "Creating XMPP Server (Instance name \"XMPP\")"
-ID=`nova boot --flavor m1.small --image $IMAGE --key_name $KEY_NAME XMPP | awk '{if (match($0,/'" id "'/)){print $4}}'`
+ID=`nova boot --flavor m1.small --image $IMAGE --key_name $KEY_NAME XMPP-$USER | awk '{if (match($0,/'" id "'/)){print $4}}'`
 echo "Created instance ID is $ID"
 sleep 60
 XMPP_IP=`nova list | grep "$ID" | awk -F'[=|]' '{print $6}' | tr -d ' '`
