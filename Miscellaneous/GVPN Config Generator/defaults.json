@@ -1,0 +1,4 @@
+{
+    "controller_logging": "logging.INFO",
+    "tincan_logging": 0
+}
