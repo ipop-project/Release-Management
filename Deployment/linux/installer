@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Usage: wget -O - http://vdaneshmand.com/installer | /bin/bash
+
+ASSISTANT_URL=http://vdaneshmand.com/assistant.tar.gz
+ASSISTANT_BINARY_NAME=assistant.tar.gz
+#ASSISTANT_BINARY_MD5=F429DB7190196AFAB81DBB7DDC31C7FE
+
+MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="Assistant Checksum Failed"
+
+INSTALLATION_DIR=/opt/ipop
+
+MSG_GENERAL_NEED_ROOT="Run with Root Privilege"
+
+function i_am_root(){
+	return $EUID
+}
+function force_root(){
+	if ! i_am_root; then
+		echo "$MSG_GENERAL_NEED_ROOT"
+		exit 5
+	fi
+}
+
+force_root
+
+mkdir -p "$INSTALLATION_DIR" 2>/dev/null
+cd "$INSTALLATION_DIR"
+wget -O "$ASSISTANT_BINARY_NAME" "$ASSISTANT_URL" && tar xvzf "$ASSISTANT_BINARY_NAME"
+
+#if [ "$(md5sum $ASSISTANT_BINARY_NAME | awk '{print $1}')" == "$ASSISTANT_BINARY_MD5" ]; then
+#	echo $MSG_INSTALL_ASSISTANT_CHECKSUM_FAILED
+#	exit 3
+#fi
+
+chmod +x assistant
+
+./assistant install
