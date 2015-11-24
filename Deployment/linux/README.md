@@ -1,4 +1,4 @@
-Running the IPOP Installer
+<h1>Running the IPOP Installer</h1>
 
 
 In case there is no wget package installed on the linux container, you need to install it first:
@@ -16,4 +16,4 @@ su yum install wget
 
 To use the IPOP Installer, run this command:
 
-wget -O - http://vdaneshmand.com/installer | /bin/bash
+wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash

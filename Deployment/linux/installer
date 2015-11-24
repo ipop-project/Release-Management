@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Usage: wget -O - http://vdaneshmand.com/installer | /bin/bash
+# Usage: wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
 
-ASSISTANT_URL=http://vdaneshmand.com/assistant.tar.gz
+ASSISTANT_URL=https://github.com/ipop-project/Release-Management/raw/master/Deployment/linux/assistant.tar.gz
 ASSISTANT_BINARY_NAME=assistant.tar.gz
 #ASSISTANT_BINARY_MD5=F429DB7190196AFAB81DBB7DDC31C7FE
 
