@@ -2,11 +2,7 @@
 
 # Usage: wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
 
-ASSISTANT_URL=https://github.com/ipop-project/Release-Management/raw/master/Deployment/linux/assistant.tar.gz
-ASSISTANT_BINARY_NAME=assistant.tar.gz
-#ASSISTANT_BINARY_MD5=F429DB7190196AFAB81DBB7DDC31C7FE
-
-MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="Assistant Checksum Failed"
+ASSISTANT_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/assistant
 
 INSTALLATION_DIR=/opt/ipop
 
@@ -26,7 +22,7 @@ force_root
 
 mkdir -p "$INSTALLATION_DIR" 2>/dev/null
 cd "$INSTALLATION_DIR"
-wget -O "$ASSISTANT_BINARY_NAME" "$ASSISTANT_URL" && tar xvzf "$ASSISTANT_BINARY_NAME"
+wget "$ASSISTANT_URL"
 
 #if [ "$(md5sum $ASSISTANT_BINARY_NAME | awk '{print $1}')" == "$ASSISTANT_BINARY_MD5" ]; then
 #	echo $MSG_INSTALL_ASSISTANT_CHECKSUM_FAILED
