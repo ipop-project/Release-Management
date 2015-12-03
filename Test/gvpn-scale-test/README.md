@@ -95,3 +95,9 @@ In scale.bash:
 In a separate terminal:
 
 ```python3 scale/visualizer.py tcp <forwarder ipv4> <forwarder port> <SIZE> <GUI window size (length)>```
+
+#### Advanced
+
+By default, the CloudLab experiment must use Ubuntu 15.04 images. In order to use Ubuntu 14.04 LTS images, modify ```scale/node/node.bash``` and set the variable ```NEW_TEST``` to ```false``` before using ```scale/scale.bash```. The usage for either image is the same.
+
+A reference profile with one physical-node and 20 LXC-nodes is available: ```IPOP_SCALE_TEST_1_TRUSTY```
