@@ -1,5 +1,7 @@
 #!/bin/bash
 
+NEW_TEST=true # true=15.04 or later; false=14.10 or earlier
+
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # determine ethernet device and host ipv4 address
@@ -17,8 +19,13 @@ else
 fi
 
 # configuration file paths
-NODE_EJABBERD_CONFIG="./config/ejabberd.yml"
-EJABBERD_CONFIG='/etc/ejabberd/ejabberd.yml'
+if [ $NEW_TEST == true ]; then
+    NODE_EJABBERD_CONFIG="./config/ejabberd.yml"
+    EJABBERD_CONFIG='/etc/ejabberd/ejabberd.yml'
+else
+    NODE_EJABBERD_CONFIG="./config/ejabberd.cfg"
+    EJABBERD_CONFIG='/etc/ejabberd/ejabberd.cfg'
+fi
 
 NODE_TURNSERVER_CONFIG="./config/turnserver.conf"
 TURNSERVER_CONFIG='/etc/turnserver/turnserver.conf'
@@ -55,7 +62,9 @@ case $1 in
         sudo cp $NODE_EJABBERD_CONFIG $EJABBERD_CONFIG
 
         # restart ejabberd service
-        sudo systemctl restart ejabberd.service
+        if [ $NEW_TEST == true ]; then
+            sudo systemctl restart ejabberd.service
+        fi
         sudo ejabberdctl restart
 
         # wait for ejabberd service to start
@@ -126,8 +135,19 @@ case $1 in
         done
 
         # define user links
-        sudo ejabberdctl srg_create ipop_vpn ejabberd ipop_vpn ipop_vpn ipop_vpn
-        sudo ejabberdctl srg_user_add @all@ ejabberd ipop_vpn ejabberd
+        if [ $NEW_TEST == true ]; then
+            sudo ejabberdctl srg_create ipop_vpn ejabberd ipop_vpn ipop_vpn ipop_vpn
+            sudo ejabberdctl srg_user_add @all@ ejabberd ipop_vpn ejabberd
+        else
+            for i in `seq 0 $(($nr_vnodes - 1))`; do
+                for j in `seq 0 $(($nr_vnodes - 1))`; do
+                    if [ "$i" != "$j" ]; then
+                        sudo ejabberdctl add_rosteritem "node$i" ejabberd "node$j" ejabberd "node$j" ipop both
+                        echo "added roster: $i $j"
+                    fi
+                done
+            done
+        fi
 
         ### initialize TURN service
         # keep $nr_vnodes persistent
@@ -144,7 +164,9 @@ case $1 in
     ("restart-server")
         ### restart services
         # restart ejabberd
-        sudo systemctl restart ejabberd.service
+        if [ $NEW_TEST == true ]; then
+            sudo systemctl restart ejabberd.service
+        fi
         sudo ejabberdctl restart
 
         # restart turnserver
@@ -162,6 +184,20 @@ case $1 in
         ### exit XMPP/STUN services
         # undefine user links
         sudo ejabberdctl srg_delete ipop_vpn ejabberd
+
+        ### exit XMPP/STUN services
+        # undefine user links
+        if [ $NEW_TEST == true ]; then
+            sudo ejabberdctl srg_delete ipop_vpn ejabberd
+        else
+            for i in `seq 0 $(($nr_vnodes - 1))`; do
+                for j in `seq 0 $(($nr_vnodes - 1))`; do
+                    if [ "$i" != "$j" ]; then
+                        sudo ejabberdctl delete_rosteritem "node$i" ejabberd "node$j" ejabberd
+                    fi
+                done
+            done
+        fi
 
         # unregister IPOP users
         for i in $(seq 0 $(($nr_vnodes - 1))); do
