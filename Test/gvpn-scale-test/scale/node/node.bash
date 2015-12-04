@@ -50,7 +50,7 @@ case $1 in
 
         # install additional packages (python and psmisc); allow tap device
         sudo chroot /var/lib/lxc/default/rootfs apt-get update
-        sudo chroot /var/lib/lxc/default/rootfs apt-get install -y python psmisc iperf
+        sudo chroot /var/lib/lxc/default/rootfs apt-get install -y python psmisc iperf valgrind
         echo 'lxc.cgroup.devices.allow = c 10:200 rwm' | sudo tee --append $DEFAULT_LXC_CONFIG
 
         ### install ejabberd
