@@ -2,6 +2,10 @@
 
 # Ubuntu 15.04 URN: urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU15-04-64-STD
 
+DOWNLOAD="https://github.com/ipop-project/Downloads/releases/download"
+RELEASEDIR="15.11.0.RC1"
+RELEASENAME="ipop-v15.11.0-RC1_Ubuntu"
+
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 function prompt()
@@ -48,6 +52,12 @@ while true; do
 
     case $cmd in
 
+        ("download")
+            echo "downloading latest release from github"
+            wget $DOWNLOAD/$RELEASEDIR/$RELEASENAME.tar.gz
+            tar zxvf $RELEASENAME.tar.gz
+            cp -r $RELEASENAME/controller node/ipop/
+            rm -rf $RELEASENAME*
         ("accept")
             echo "enter 'yes' to add a node to the list of known hosts"
             for node in ${NODES[@]}; do
@@ -189,6 +199,7 @@ while true; do
         (*)
             echo 'usage:'
             echo '  platform management:'
+            echo '    download           : download the latest release from github'
             echo '    accept             : manually enable connections'
             echo '    install            : install/prepare resources'
             echo '    init    [size]     : initialize platform'
