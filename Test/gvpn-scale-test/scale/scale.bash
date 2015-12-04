@@ -62,6 +62,8 @@ while true; do
                     echo 'put node.tar.gz' | sftp $node;
                     ssh $node 'tar xf node.tar.gz; bash $NODE_NODE_SCRIPT install';
                 " &
+                tmp='\*    soft    core    unlimited';
+                ssh $node "sudo bash -c 'echo "$tmp" >> /etc/security/limits.conf; ulimit -c unlimited'";
             done
             wait
             ;;
