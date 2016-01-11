@@ -2,17 +2,17 @@
 
 Note: You need to have root access to run some of the following commands.
 
-<h2>Installing wget Package</h2>
+<h2>Installing 'wget' and 'unzip' Packages</h2>
 
-In case there is no "wget" package installed, you need to install it first:
+In case 'wget' and 'unzip' packagea are not installed, you need to install them first:
 
 **In Ubuntu:**
 
-    sudo apt-get install wget
+    sudo apt-get install wget unzip
 
 **In CentOS:**
 
-    su yum install wget
+    su yum install wget unzip
 
 <h2>Using IPOP Installer</h2>
 
