@@ -221,7 +221,7 @@ case "$action" in
 			fi
 		fi
 
-		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && tar xvzf "$CONTROLLER_BINARY_NAME"
+		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && unzip xvzf "$CONTROLLER_BINARY_NAME"
 #		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" == "$CONTROLLER_BINARY_MD5" ]; then
 #			echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
 #			exit 3
