@@ -2,7 +2,7 @@
 
 # Usage: wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
 
-ASSISTANT_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/assistant
+IPOP_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/ipop
 
 INSTALLATION_DIR=/opt/ipop
 
@@ -22,13 +22,13 @@ force_root
 
 mkdir -p "$INSTALLATION_DIR" 2>/dev/null
 cd "$INSTALLATION_DIR"
-wget "$ASSISTANT_URL"
+wget "$IPOP_URL"
 
-#if [ "$(md5sum $ASSISTANT_BINARY_NAME | awk '{print $1}')" == "$ASSISTANT_BINARY_MD5" ]; then
-#	echo $MSG_INSTALL_ASSISTANT_CHECKSUM_FAILED
+#if [ "$(md5sum $IPOP_BINARY_NAME | awk '{print $1}')" == "$IPOP_BINARY_MD5" ]; then
+#	echo $MSG_INSTALL_IPOP_CHECKSUM_FAILED
 #	exit 3
 #fi
 
-chmod +x assistant
+chmod +x ipop
 
-./assistant install
+./ipop install
