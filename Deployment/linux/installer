@@ -22,7 +22,7 @@ force_root
 
 mkdir -p "$INSTALLATION_DIR" 2>/dev/null
 cd "$INSTALLATION_DIR"
-wget "$IPOP_URL"
+wget -O "$IPOP_URL"
 
 #if [ "$(md5sum $IPOP_BINARY_NAME | awk '{print $1}')" == "$IPOP_BINARY_MD5" ]; then
 #	echo $MSG_INSTALL_IPOP_CHECKSUM_FAILED
