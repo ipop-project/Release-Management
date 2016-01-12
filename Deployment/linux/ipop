@@ -1,7 +1,7 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL=https://github.com/ipop-project/controllers/archive/devel.zip
-CONTROLLER_BINARY_NAME=devel.zip
+CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0.rc2/ipop-v16.01.0-RC2_Ubuntu.tar.gz
+CONTROLLER_BINARY_NAME=ipop-v16.01.0-RC2_Ubuntu.tar.gz
 #CONTROLLER_BINARY_MD5=F3747536374EBB0551BA7B406031E949
 
 INSTALLATION_DIR=/opt/ipop
@@ -221,7 +221,7 @@ case "$action" in
 			fi
 		fi
 
-		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && unzip "$CONTROLLER_BINARY_NAME"
+		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && tar xvzf "$CONTROLLER_BINARY_NAME"
 #		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" == "$CONTROLLER_BINARY_MD5" ]; then
 #			echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
 #			exit 3
