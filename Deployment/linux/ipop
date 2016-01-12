@@ -22,13 +22,13 @@ fi
 read -r -d '' GVPN_CONF <<EOT
 {
     "CFx": {
-        "xmpp_username": "",
-        "xmpp_password": "",
-        "xmpp_host": "",
+        "xmpp_username": "%XMPP_USERNAME%",
+        "xmpp_password": "%XMPP_PASSWORD%",
+        "xmpp_host": "%XMPP_HOST%",
         "tincan_logging": 0,
         "vpn_type": "GroupVPN",
         "ip4_mask": 16,
-        "stat_report": false
+        "stat_report": "%STAT_REPORT_BOOLEAN%"
     },
         "Logger": {
         "controller_logging": "ERROR"
@@ -38,7 +38,7 @@ read -r -d '' GVPN_CONF <<EOT
         "dependencies": ["Logger"]
     },
         "BaseTopologyManager": {
-        "ip4": "172.31.0.100",
+        "ip4": "%IP4%",
         "sec": true,
         "multihop": false,
         "num_successors": 2,
@@ -83,11 +83,11 @@ EOT
 read -r -d '' SVPN_CONF <<EOT
 {
     "CFx": {
-        "xmpp_username": "",
-        "xmpp_password": "",
+        "xmpp_username": "%XMPP_USERNAME%",
+        "xmpp_password": "%XMPP_PASSWORD%",
         "ip4_mask": 24,
-        "xmpp_host": "",
-        "stat_report": true,
+        "xmpp_host": "%XMPP_HOST%",
+        "stat_report": "%STAT_REPORT_BOOLEAN%",
         "tincan_logging": 0,
         "vpn_type": "SocialVPN"
     },
@@ -121,7 +121,7 @@ read -r -d '' SVPN_CONF <<EOT
         "dependencies": ["Logger"]
     },
     "AddressMapper": {
-        "ip4": "172.31.0.100",
+        "ip4": "%IP4%",
         "dependencies": ["Logger"]
     },
     "Watchdog": {
