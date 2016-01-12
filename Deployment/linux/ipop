@@ -28,7 +28,7 @@ read -r -d '' GVPN_CONF <<EOT
         "tincan_logging": 0,
         "vpn_type": "GroupVPN",
         "ip4_mask": 16,
-        "stat_report": "%STAT_REPORT_BOOLEAN%"
+        "stat_report": %STAT_REPORT_BOOLEAN%
     },
         "Logger": {
         "controller_logging": "ERROR"
@@ -87,7 +87,7 @@ read -r -d '' SVPN_CONF <<EOT
         "xmpp_password": "%XMPP_PASSWORD%",
         "ip4_mask": 24,
         "xmpp_host": "%XMPP_HOST%",
-        "stat_report": "%STAT_REPORT_BOOLEAN%",
+        "stat_report": %STAT_REPORT_BOOLEAN%,
         "tincan_logging": 0,
         "vpn_type": "SocialVPN"
     },
