@@ -2,6 +2,7 @@
 
 CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0.rc2/ipop-v16.01.0-RC2_Ubuntu.tar.gz
 CONTROLLER_BINARY_NAME=ipop-v16.01.0-RC2_Ubuntu.tar.gz
+CONTROLLER_DIR=ipop-v16.01.0-RC2_Ubuntu
 #CONTROLLER_BINARY_MD5=F3747536374EBB0551BA7B406031E949
 
 INSTALLATION_DIR=/opt/ipop
@@ -289,7 +290,7 @@ case "$action" in
 		else
 			sh -c './ipop-tincan-x86 1> log/out.log 2> log/err.log &'
 		fi
-		cd controller
+		cd "$CONTROLLER_DIR"/controller
 		python -m Controller -c ../conf/config.json &> ../log/log.txt &
 
 		echo "$MSG_START_SUCCESS"
