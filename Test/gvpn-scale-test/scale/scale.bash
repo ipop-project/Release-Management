@@ -58,6 +58,7 @@ while true; do
             tar zxvf $RELEASENAME.tar.gz
             cp -r $RELEASENAME/controller node/ipop/
             rm -rf $RELEASENAME*
+            ;;
         ("accept")
             echo "enter 'yes' to add a node to the list of known hosts"
             for node in ${NODES[@]}; do
