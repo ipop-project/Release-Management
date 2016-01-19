@@ -207,13 +207,13 @@ case $1 in
             "\n    \"xmpp_username\": \"$xmpp_username\","\
             "\n    \"xmpp_password\": \"$xmpp_password\","\
             "\n    \"xmpp_host\": \"$xmpp_host\","\
-            "\n    \"tincan_logging\": 0,"\
+            "\n    \"tincan_logging\": 2,"\
             "\n    \"vpn_type\": \"GroupVPN\","\
             "\n    \"ip4_mask\": $ipv4_mask,"\
             "\n    \"stat_report\": false"\
             "\n  },"\
             "\n  \"Logger\": {"\
-            "\n    \"controller_logging\": \"ERROR\""\
+            "\n    \"controller_logging\": \"DEBUG\""\
             "\n  },"\
             "\n  \"TincanSender\": {"\
             "\n    \"switchmode\": 1,"\
