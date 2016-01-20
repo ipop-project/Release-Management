@@ -287,7 +287,7 @@ case "$action" in
 #		if [ $is_64 ]; then
 #			sh -c './ipop-tincan-x86_64 1> log/out.log 2> log/err.log &'
 #		else
-		sh -c './ipop-tincan-x86 1> log/out.log 2> log/err.log &'
+		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
 #		fi
 		cd "$CONTROLLER_DIR"/controller
 		python -m Controller -c ../conf/config.json &> ../log/log.txt &
@@ -299,7 +299,7 @@ case "$action" in
 	stop)
 		force_root
 #		killall ipop-tincan-x86_64
-		killall ipop-tincan-x86
+		killall ipop-tincan
 		kill -9 `ps aux | grep Controller.py | grep python | awk '{print $2}'`
 		echo "$MSG_STOP_SUCCESS"
 		exit 0
