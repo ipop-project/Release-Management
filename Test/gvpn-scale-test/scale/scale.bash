@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # Ubuntu 15.04 URN: urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU15-04-64-STD
-
 DOWNLOAD="https://github.com/ipop-project/Downloads/releases/download"
-RELEASEDIR="15.11.0.RC1"
-RELEASENAME="ipop-v15.11.0-RC1_Ubuntu"
+RELEASEDIR="v16.01.0.rc3"
+RELEASENAME="ipop-v16.01.0-RC3_Ubuntu"
 
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -53,11 +52,14 @@ while true; do
     case $cmd in
 
         ("download")
-            echo "downloading latest release from github"
+            # download controller sources and ipop-tincan binary from ipop-project/Downloads
+            # TODO static link address
             wget $DOWNLOAD/$RELEASEDIR/$RELEASENAME.tar.gz
-            tar zxvf $RELEASENAME.tar.gz
+            tar xf $RELEASENAME.tar.gz
             cp -r $RELEASENAME/controller node/ipop/
-            rm -rf $RELEASENAME*
+            cp $RELEASENAME/ipop-tincan node/ipop/
+            rm -r $RELEASENAME
+            rm $RELEASENAME.tar.gz
             ;;
         ("accept")
             echo "enter 'yes' to add a node to the list of known hosts"
