@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0.rc2/ipop-v16.01.0-RC2_Ubuntu.tar.gz
-CONTROLLER_BINARY_NAME=ipop-v16.01.0-RC2_Ubuntu.tar.gz
-CONTROLLER_DIR=ipop-v16.01.0-RC2_Ubuntu
+CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0.rc3/ipop-v16.01.0-RC3_Ubuntu.tar.gz
+CONTROLLER_BINARY_NAME=ipop-v16.01.0-RC3_Ubuntu.tar.gz
+CONTROLLER_DIR=ipop-v16.01.0-RC3_Ubuntu
 #CONTROLLER_BINARY_MD5=F3747536374EBB0551BA7B406031E949
 
 INSTALLATION_DIR=/opt/ipop
@@ -11,9 +11,9 @@ INSTALLATION_DIR=/opt/ipop
 cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
 cat /etc/issue | grep CentOS > /dev/null && is_centos=true
 
-if [ "$(uname -m)" == "x86_64" ]; then
-	is_64=true
-fi
+#if [ "$(uname -m)" == "x86_64" ]; then
+#	is_64=true
+#fi
 
 #TODO: Check for update
 
@@ -284,11 +284,11 @@ case "$action" in
 		force_root
 		cd "$INSTALLATION_DIR"
 		[ -d log ] || mkdir log
-		if [ $is_64 ]; then
-			sh -c './ipop-tincan-x86_64 1> log/out.log 2> log/err.log &'
-		else
-			sh -c './ipop-tincan-x86 1> log/out.log 2> log/err.log &'
-		fi
+#		if [ $is_64 ]; then
+#			sh -c './ipop-tincan-x86_64 1> log/out.log 2> log/err.log &'
+#		else
+		sh -c './ipop-tincan-x86 1> log/out.log 2> log/err.log &'
+#		fi
 		cd "$CONTROLLER_DIR"/controller
 		python -m Controller -c ../conf/config.json &> ../log/log.txt &
 
@@ -298,7 +298,7 @@ case "$action" in
 
 	stop)
 		force_root
-		killall ipop-tincan-x86_64
+#		killall ipop-tincan-x86_64
 		killall ipop-tincan-x86
 		kill -9 `ps aux | grep Controller.py | grep python | awk '{print $2}'`
 		echo "$MSG_STOP_SUCCESS"
