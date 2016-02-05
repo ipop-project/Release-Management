@@ -1,5 +1,5 @@
-start ipop-tincan.exe
-ping 1.1.1.1 -n 1 -w 3000 > nul
+start /B ipop-tincan.exe > logs\tincan.log 2>&1
+ping 1.1.1.1 -n 1 -w 3000 > null
 set PATH=%PATH%;C:\Python27
-python -m controller.Controller -c config/svpn-config.json
+start /B /WAIT python -m controller.Controller -c config/svpn-config.json > logs\ctrl.log 2>&1
 pause
