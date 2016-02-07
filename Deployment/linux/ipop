@@ -2,11 +2,9 @@
 
 CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_ubuntu.tar.gz
 CONTROLLER_BINARY_NAME=ipop-v16.01.0_ubuntu.tar.gz
-CONTROLLER_DIR=ipop-v16.01.0_ubuntu
-#CONTROLLER_BINARY_MD5=F3747536374EBB0551BA7B406031E949
+CONTROLLER_BINARY_MD5=bd5e58a94ea2ececbfd57c5d9de13ab2
 
 INSTALLATION_DIR=/opt/ipop
-# TODO: Must work eaither with or without /
 
 cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
 #cat /etc/issue | grep CentOS > /dev/null && is_centos=true
@@ -17,7 +15,7 @@ cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
 
 #TODO: Check for update
 
-[ -f "$INSTALLATION_DIR" ] || cp $0 "$INSTALLATION_DIR"
+#[ -f "$INSTALLATION_DIR" ] || cp $0 "$INSTALLATION_DIR"
 
 read -r -d '' GVPN_CONF <<EOT
 {
@@ -120,7 +118,7 @@ read -r -d '' SVPN_CONF <<EOT
         "dependencies": ["Logger"]
     },
     "AddressMapper": {
-        "ip4": %IP4%",
+        "ip4": "%IP4%",
         "dependencies": ["Logger"]
     },
     "Watchdog": {
@@ -220,10 +218,10 @@ case "$action" in
 #		fi
 
 		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && tar xvzf "$CONTROLLER_BINARY_NAME"
-#		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" == "$CONTROLLER_BINARY_MD5" ]; then
-#			echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
-#			exit 3
-#		fi
+		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" == "$CONTROLLER_BINARY_MD5" ]; then
+			echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
+			exit 3
+		fi
 
 		if [ ! -e /dev/net/tun ]; then
 			mkdir /dev/net
@@ -258,15 +256,13 @@ case "$action" in
 
 		if [ $vpn_type -eq 1 ]; then
 			CONF="$GVPN_CONF"
-			# CONF_FILE="${INSTALLATION_DIR}/controller/modules/gvpn-config.json"
 		else
 			CONF="$SVPN_CONF"
-			# CONF_FILE="${INSTALLATION_DIR}/controller/modules/svpn-config.json"
 		fi
 
 		cd "${INSTALLATION_DIR}"
-		[ -d conf ] || mkdir conf
-		CONF_FILE="conf/config.json"
+		[ -d config ] || mkdir config
+		CONF_FILE="config/config.json"
 
 		echo "$CONF" |
 			sed "s~%XMPP_HOST%~$xmpp_host~g" |
@@ -280,15 +276,14 @@ case "$action" in
 
 	start)
 		force_root
-		cd "$INSTALLATION_DIR/$CONTROLLER_DIR"
+		cd "$INSTALLATION_DIR"
 		[ -d log ] || mkdir log
 #		if [ $is_64 ]; then
 #			sh -c './ipop-tincan-x86_64 1> log/out.log 2> log/err.log &'
 #		else
 		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
 #		fi
-		cd controller
-		python -m Controller -c ../conf/config.json &> ../log/log.txt &
+		python -m controller.Controller -c config/config.json &> log/log.txt &
 
 		echo "$MSG_START_SUCCESS"
 		exit 0
@@ -297,8 +292,10 @@ case "$action" in
 	stop)
 		force_root
 #		killall ipop-tincan-x86_64
-		killall ipop-tincan
-		kill -9 `ps aux | grep Controller.py | grep python | awk '{print $2}'`
+#		killall ipop-tincan
+#		kill -9 `ps aux | grep controller.Controller.py | grep python | awk '{print $2}'`
+		ps aux | grep -v grep | grep ipop-tincan | awk '{print $2}' | xargs sudo kill -9
+		ps aux | grep -v grep | grep controller.Controller | awk '{print $2}' | xargs sudo kill -9
 		echo "$MSG_STOP_SUCCESS"
 		exit 0
 		;;
