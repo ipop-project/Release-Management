@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0.rc3/ipop-v16.01.0-RC3_Ubuntu.tar.gz
-CONTROLLER_BINARY_NAME=ipop-v16.01.0-RC3_Ubuntu.tar.gz
-CONTROLLER_DIR=ipop-v16.01.0-RC3_Ubuntu
+CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_ubuntu.tar.gz
+CONTROLLER_BINARY_NAME=ipop-v16.01.0_ubuntu.tar.gz
+CONTROLLER_DIR=ipop-v16.01.0_ubuntu
 #CONTROLLER_BINARY_MD5=F3747536374EBB0551BA7B406031E949
 
 INSTALLATION_DIR=/opt/ipop
