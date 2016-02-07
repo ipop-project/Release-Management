@@ -13,9 +13,7 @@ cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
 #	is_64=true
 #fi
 
-#TODO: Check for update
-
-#[ -f "$INSTALLATION_DIR" ] || cp $0 "$INSTALLATION_DIR"
+[ -f "$INSTALLATION_DIR" ] || cp $0 "$INSTALLATION_DIR"
 
 read -r -d '' GVPN_CONF <<EOT
 {
