@@ -13,7 +13,7 @@ cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
 #	is_64=true
 #fi
 
-[ -f "$INSTALLATION_DIR" ] || cp $0 "$INSTALLATION_DIR"
+#[ -f "$INSTALLATION_DIR" ] || cp $0 "$INSTALLATION_DIR"
 
 read -r -d '' GVPN_CONF <<EOT
 {
@@ -216,7 +216,7 @@ case "$action" in
 #		fi
 
 		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && tar xvzf "$CONTROLLER_BINARY_NAME"
-		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" == "$CONTROLLER_BINARY_MD5" ]; then
+		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5" ]; then
 			echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
 			exit 3
 		fi
