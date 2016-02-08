@@ -7,13 +7,6 @@ CONTROLLER_BINARY_MD5=bd5e58a94ea2ececbfd57c5d9de13ab2
 INSTALLATION_DIR=/opt/ipop
 
 cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
-#cat /etc/issue | grep CentOS > /dev/null && is_centos=true
-
-#if [ "$(uname -m)" == "x86_64" ]; then
-#	is_64=true
-#fi
-
-#[ -f "$INSTALLATION_DIR" ] || cp $0 "$INSTALLATION_DIR"
 
 read -r -d '' GVPN_CONF <<EOT
 {
@@ -178,8 +171,8 @@ function prompt(){
 function set_state(){
 	state=$1
 	echo "$state" > installer.stat
-#TODO
 }
+
 function get_state(){
 	cat installer.stat 2>/dev/null
 }
@@ -208,12 +201,6 @@ case "$action" in
 				exit 4
 			fi
 		fi
-#		if [ "$is_centos" = true ]; then
-#			if ! (yum update && yum install -y psmisc wget ca-certificates python) ; then
-#				echo "$MSG_INSTALL_INSTALLATION_FAILED"
-#				exit 4
-#			fi
-#		fi
 
 		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && tar xvzf "$CONTROLLER_BINARY_NAME"
 		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5" ]; then
@@ -276,22 +263,14 @@ case "$action" in
 		force_root
 		cd "$INSTALLATION_DIR"
 		[ -d log ] || mkdir log
-#		if [ $is_64 ]; then
-#			sh -c './ipop-tincan-x86_64 1> log/out.log 2> log/err.log &'
-#		else
 		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
-#		fi
 		python -m controller.Controller -c config/config.json &> log/log.txt &
-
 		echo "$MSG_START_SUCCESS"
 		exit 0
 		;;
 
 	stop)
 		force_root
-#		killall ipop-tincan-x86_64
-#		killall ipop-tincan
-#		kill -9 `ps aux | grep controller.Controller.py | grep python | awk '{print $2}'`
 		ps aux | grep -v grep | grep ipop-tincan | awk '{print $2}' | xargs sudo kill -9
 		ps aux | grep -v grep | grep controller.Controller | awk '{print $2}' | xargs sudo kill -9
 		echo "$MSG_STOP_SUCCESS"
