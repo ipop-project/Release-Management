@@ -2,13 +2,7 @@
 
 Note: You need to have root access to run some of the following commands.
 
-**In Ubuntu:**
-
     sudo -i
- 
-**In CentOS:**
-
-    sudo -s
 
 ## Prerequisite
 
@@ -16,11 +10,11 @@ If the 'wget' package is not installed, you will need to install it:
 
 **In Ubuntu:**
 
-    sudo apt-get install wget
+    apt-get install wget
  
 **In CentOS:**
 
-    su yum install wget
+    yum install wget
 
 ## Launching the IPOP-VPN Installer
 
@@ -68,4 +62,4 @@ If you ever need to change the configurations manually, the sample configuration
 See the [configuration page](https://github.com/ipop-project/ipop-project.github.io/wiki/Controller-Configuration) for more information about the configuration options available for IPOP-VPN.
 
 ## Manual Installation
-If you need to perform a manual installation of IPOP-VPN, detailed instructions are available on the [[Manual Installation page| Manual Install on Linux]]
+If you need to perform a manual installation of IPOP-VPN, detailed instructions are available on the [Manual Installation Page | Manual Install on Linux](https://github.com/ipop-project/ipop-project.github.io/wiki/Manual-Install-on-Linux)
