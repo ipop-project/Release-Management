@@ -1,22 +1,36 @@
-<h1>IPOP Installer and IPOP for Ubuntu</h1>
+# Installing IPOP-VPN on Linux (Ubuntu or CentOS)
 
 Note: You need to have root access to run some of the following commands.
 
-<h2>Installing 'wget' Package</h2>
+**In Ubuntu:**
 
-In case 'wget' package is not installed, you need to install it first:
+    sudo -i
+ 
+**In CentOS:**
+
+    sudo -s
+
+## Prerequisite
+
+If the 'wget' package is not installed, you will need to install it:
+
+**In Ubuntu:**
 
     sudo apt-get install wget
+ 
+**In CentOS:**
 
-<h2>Using IPOP Installer</h2>
+    su yum install wget
 
-To use IPOP Installer, run this command:
+## Launching the IPOP-VPN Installer
 
-    wget -O - http://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
+To start the IPOP Installer, run the following command:
+
+    wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/v16.01.0/Deployment/linux/installer | /bin/bash
 
 The default installation directory will be `/opt/ipop` and you can use `ipop` executable script to control IPOP.
 
-<h2>Using IPOP</h2>
+## Using IPOP
 
 First change current directory to the installation directory:
 
@@ -44,10 +58,14 @@ Execute IPOP which is `ipop` executable script right in the installation directo
 
     ./ipop stop
 
-<h2>Manual Configuration</h2>
+## Log Files
+
+If anything went wrong while using IPOP, the log files are located at `/opt/ipop/log`.
+
+## Manual Configuration
 
 If you ever need to change the configurations manually, the sample configuration files are located in `/opt/ipop/config`. IPOP reads the configurations from `/opt/ipop/config/config.json` which will automatically be created after running `./ipop config` and following the prompts. Keep in mind you need to stop IPOP and then start it again after changing the configurations.
+See the [configuration page](https://github.com/ipop-project/ipop-project.github.io/wiki/Controller-Configuration) for more information about the configuration options available for IPOP-VPN.
 
-<h2>Log Files</h2>
-
-If anything went wrong while using IPOP, the log files are located in `/opt/ipop/log`.
+## Manual Installation
+If you need to perform a manual installation of IPOP-VPN, detailed instructions are available on the [[Manual Installation page| Manual Install on Linux]]

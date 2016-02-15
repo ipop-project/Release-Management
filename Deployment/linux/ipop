@@ -1,12 +1,16 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_ubuntu.tar.gz
-CONTROLLER_BINARY_NAME=ipop-v16.01.0_ubuntu.tar.gz
-CONTROLLER_BINARY_MD5=bd5e58a94ea2ececbfd57c5d9de13ab2
+CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_ubuntu.tar.gz
+CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_centos7.tar.gz
+CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.0_ubuntu.tar.gz
+CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.0_centos7.tar.gz
+CONTROLLER_BINARY_MD5_UBUNTU=bd5e58a94ea2ececbfd57c5d9de13ab2
+CONTROLLER_BINARY_MD5_CENTOS=5b92915cc4d258e2c6261a93339519e3
 
 INSTALLATION_DIR=/opt/ipop
 
 cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
+cat /etc/issue | grep CentOS > /dev/null && is_centos=true
 
 read -r -d '' GVPN_CONF <<EOT
 {
@@ -129,7 +133,7 @@ MSG_GENERAL_NEED_ROOT="Run with Root Privilege"
 MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="Controller Checksum Failed"
 MSG_INSTALL_INSTALLATION_FAILED="Installation Failed"
 MSG_INSTALL_INSTALLED_SUCCESSFULLY="Installed"
-MSG_CONFIG_OVERWRITE="IPOP already Configured. Do you want to overwrite it? [y/N] "
+MSG_CONFIG_OVERWRITE="IPOP already Configured. Do you want to overwrite it? [Y/n] "
 MSG_CONFIG_CFGTYPE="Which configuration do you want to install?
  1) Group VPN
  2) Social VPN
@@ -200,12 +204,23 @@ case "$action" in
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
+			wget -O "$CONTROLLER_BINARY_NAME_UBUNTU" "$CONTROLLER_BINARY_URL_UBUNTU" && tar xvzf "$CONTROLLER_BINARY_NAME_UBUNTU"
+			if [ "$(md5sum $CONTROLLER_BINARY_NAME_UBUNTU | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_UBUNTU" ]; then
+				echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
+				exit 3
+			fi
 		fi
 
-		wget -O "$CONTROLLER_BINARY_NAME" "$CONTROLLER_BINARY_URL" && tar xvzf "$CONTROLLER_BINARY_NAME"
-		if [ "$(md5sum $CONTROLLER_BINARY_NAME | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5" ]; then
-			echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
-			exit 3
+		if [ "$is_centos" = true ]; then
+			if ! (yum update && yum install -y psmisc wget ca-certificates python) ; then
+				echo "$MSG_INSTALL_INSTALLATION_FAILED"
+				exit 4
+			fi
+			wget -O "$CONTROLLER_BINARY_NAME_CENTOS" "$CONTROLLER_BINARY_URL_CENTOS" && tar xvzf "$CONTROLLER_BINARY_NAME_CENTOS"
+			if [ "$(md5sum $CONTROLLER_BINARY_NAME_CENTOS | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_CENTOS" ]; then
+				echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
+				exit 3
+			fi
 		fi
 
 		if [ ! -e /dev/net/tun ]; then
