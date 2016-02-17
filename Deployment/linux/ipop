@@ -242,7 +242,7 @@ case "$action" in
 			fi
 		fi
 		prompt vpn_type "[1-2]" "$MSG_CONFIG_CFGTYPE"
-		prompt xmpp_host "ip4" "$MSG_CONFIG_XMPP_HOST"
+		prompt xmpp_host "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_HOST"
 		prompt xmpp_username "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_USERNAME"
 		prompt xmpp_password ".+" "$MSG_CONFIG_XMPP_PASSWORD"
 		prompt ip4 "ip4" "$MSG_CONFIG_IP4"
