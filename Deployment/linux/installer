@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Usage: wget -O - http://raw.githubusercontent.com/ipop-project/Release-Management/dev/Deployment/linux/installer | /bin/bash
+# Usage: wget -O - http://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
 
-IPOP_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/dev/Deployment/linux/ipop
+IPOP_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/ipop
 
 INSTALLATION_DIR=/opt/ipop
 
