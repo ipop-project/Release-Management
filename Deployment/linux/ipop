@@ -10,7 +10,11 @@ CONTROLLER_BINARY_MD5_CENTOS=5b92915cc4d258e2c6261a93339519e3
 INSTALLATION_DIR=/opt/ipop
 
 cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
-cat /etc/issue | grep CentOS > /dev/null && is_centos=true
+#cat /etc/issue | grep CentOS > /dev/null && is_centos=true
+
+if [ -f /etc/centos-release ] ; then
+	is_centos=true
+fi
 
 read -r -d '' GVPN_CONF <<EOT
 {

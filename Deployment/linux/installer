@@ -11,6 +11,7 @@ MSG_GENERAL_NEED_ROOT="Run with Root Privilege"
 function i_am_root(){
 	return $EUID
 }
+
 function force_root(){
 	if ! i_am_root; then
 		echo "$MSG_GENERAL_NEED_ROOT"
@@ -23,7 +24,5 @@ force_root
 mkdir -p "$INSTALLATION_DIR" 2>/dev/null
 cd "$INSTALLATION_DIR"
 wget -N "$IPOP_URL"
-
 chmod +x ipop
-
 ./ipop install
