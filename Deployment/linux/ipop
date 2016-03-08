@@ -216,7 +216,7 @@ case "$action" in
 		fi
 
 		if [ "$is_centos" = true ]; then
-			if ! (yum update && yum install -y psmisc wget ca-certificates python) ; then
+			if ! (yum update -y && yum install -y psmisc wget ca-certificates python) ; then
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
