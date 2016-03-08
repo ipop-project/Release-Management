@@ -297,7 +297,13 @@ case "$action" in
 		;;
 
 	status)
-		echo -e '\x02\x01{"m":"get_state"}' | netcat -q 1 -u 127.0.0.1 5800
+		if [ "$is_ubuntu" = true ]; then
+			echo -e '\x02\x01{"m":"get_state"}' | netcat -q 1 -u 127.0.0.1 5800
+		fi
+
+		if [ "$is_centos" = true ]; then
+			echo -e '\x02\x01{"m":"get_state"}' | ncat -u 127.0.0.1 5800
+		fi
 		;;
 
 	*)
