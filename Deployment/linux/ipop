@@ -204,7 +204,7 @@ case "$action" in
 		cd "$INSTALLATION_DIR"
 
 		if [ "$is_ubuntu" = true ]; then
-			if ! (apt-get update && apt-get install -y psmisc wget ca-certificates python) ; then
+			if ! (apt-get update && apt-get install -y psmisc wget ca-certificates python tcpdump) ; then
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
@@ -216,7 +216,7 @@ case "$action" in
 		fi
 
 		if [ "$is_centos" = true ]; then
-			if ! (yum update -y && yum install -y psmisc wget ca-certificates python) ; then
+			if ! (yum update -y && yum install -y psmisc wget ca-certificates python tcpdump) ; then
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
@@ -297,13 +297,7 @@ case "$action" in
 		;;
 
 	status)
-		if [ "$is_ubuntu" = true ]; then
-			echo -e '\x02\x01{"m":"get_state"}' | netcat -q 1 -u 127.0.0.1 5800
-		fi
-
-		if [ "$is_centos" = true ]; then
-			echo -e '\x02\x01{"m":"get_state"}' | ncat -u 127.0.0.1 5800
-		fi
+		tcpdump -ni lo udp port 5800 -A -t -c 2
 		;;
 
 	*)
