@@ -1,6 +1,6 @@
 # Installing IPOP-VPN on Linux (Ubuntu or CentOS)
 
-Note: You need to have root access to run some of the following commands.
+Note: You need to have root access to run some of the following commands. Switched to interactive root shell:
 
     sudo -i
 
@@ -23,6 +23,8 @@ To start the IPOP Installer, run the following command:
     wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/v16.01.0/Deployment/linux/installer | /bin/bash
 
 The default installation directory will be `/opt/ipop` and you can use `ipop` executable script to control IPOP.
+
+Note: Make sure you have already switched to interactive root shell using `sudo -i` before running the above command. Running it with just adding `sudo` to the beginning is not enough.
 
 ## Using IPOP
 

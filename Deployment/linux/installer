@@ -2,11 +2,13 @@
 
 # Usage: wget -O - http://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
 
-IPOP_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/ipop
+IPOP_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/dev/Deployment/linux/ipop
 
 INSTALLATION_DIR=/opt/ipop
 
-MSG_GENERAL_NEED_ROOT="Run with Root Privilege"
+MSG_GENERAL_NEED_ROOT="
+Run with Root Privilege
+Make sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough."
 
 function i_am_root(){
 	return $EUID

@@ -9,11 +9,12 @@ CONTROLLER_BINARY_MD5_CENTOS=5b92915cc4d258e2c6261a93339519e3
 
 INSTALLATION_DIR=/opt/ipop
 
-cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
-#cat /etc/issue | grep CentOS > /dev/null && is_centos=true
+if [ -f /etc/debian-version ] ; then
+	is_debian=true
 
-if [ -f /etc/centos-release ] ; then
+elif [ -f /etc/centos-release ] ; then
 	is_centos=true
+
 fi
 
 read -r -d '' GVPN_CONF <<EOT
@@ -133,11 +134,13 @@ read -r -d '' SVPN_CONF <<EOT
 }
 EOT
 
-MSG_GENERAL_NEED_ROOT="Run with Root Privilege"
+MSG_GENERAL_NEED_ROOT="
+Run with Root Privilege
+Make sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough."
 MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="Controller Checksum Failed"
 MSG_INSTALL_INSTALLATION_FAILED="Installation Failed"
 MSG_INSTALL_INSTALLED_SUCCESSFULLY="Installed"
-MSG_CONFIG_OVERWRITE="IPOP already Configured. Do you want to overwrite it? [Y/n] "
+MSG_CONFIG_OVERWRITE="IPOP is already configured. Do you want to overwrite it? [Y/n] "
 MSG_CONFIG_CFGTYPE="Which configuration do you want to install?
  1) Group VPN
  2) Social VPN
@@ -156,6 +159,7 @@ Enter [y|N]: "
 MSG_CONFIG_CONFIGURED_SUCCESSFULLY="Configured Successfully"
 MSG_START_SUCCESS="Started"
 MSG_STOP_SUCCESS="Stopped"
+MSG_UNSUPPORTED_OS="Unsupported Operating System - IPOP currently works on CentOS and Debian based Linux distributions such as Debian, Ubuntu, Mint, and Raspbian."
 
 function prompt(){
 	retvar=$1
@@ -203,28 +207,31 @@ case "$action" in
 		mkdir -p "$INSTALLATION_DIR" 2>/dev/null
 		cd "$INSTALLATION_DIR"
 
-		if [ "$is_ubuntu" = true ]; then
+		if [ "$is_debian" = true ]; then
 			if ! (apt-get update && apt-get install -y psmisc wget ca-certificates python tcpdump) ; then
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_UBUNTU" "$CONTROLLER_BINARY_URL_UBUNTU" && tar xvzf "$CONTROLLER_BINARY_NAME_UBUNTU"
 			if [ "$(md5sum $CONTROLLER_BINARY_NAME_UBUNTU | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_UBUNTU" ]; then
-				echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
+				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
 				exit 3
 			fi
-		fi
 
-		if [ "$is_centos" = true ]; then
-			if ! (yum update -y && yum install -y psmisc wget ca-certificates python tcpdump) ; then
+		elif [ "$is_centos" = true ]; then
+			if ! (yum update && yum install -y psmisc wget ca-certificates python tcpdump) ; then
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_CENTOS" "$CONTROLLER_BINARY_URL_CENTOS" && tar xvzf "$CONTROLLER_BINARY_NAME_CENTOS"
 			if [ "$(md5sum $CONTROLLER_BINARY_NAME_CENTOS | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_CENTOS" ]; then
-				echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
+				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
 				exit 3
 			fi
+
+		else
+			echo "$MSG_UNSUPPORTED_OS"
+
 		fi
 
 		if [ ! -e /dev/net/tun ]; then
