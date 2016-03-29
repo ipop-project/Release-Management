@@ -9,7 +9,7 @@ CONTROLLER_BINARY_MD5_CENTOS=5b92915cc4d258e2c6261a93339519e3
 
 INSTALLATION_DIR=/opt/ipop
 
-if [ -f /etc/debian-version ] ; then
+if [ -f /etc/debian_version ] ; then
 	is_debian=true
 
 elif [ -f /etc/centos-release ] ; then
