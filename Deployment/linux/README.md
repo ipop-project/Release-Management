@@ -1,6 +1,6 @@
 # Installing IPOP-VPN on Linux (Ubuntu or CentOS)
 
-Note: You need to have root access to run some of the following commands. Switched to interactive root shell:
+Note: You need to have root access to run some of the following commands. Running the IPOP Installer with just adding `sudo` to the beginning of the command is not enough. Switch to interactive root shell: 
 
     sudo -i
 
