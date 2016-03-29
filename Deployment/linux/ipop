@@ -9,10 +9,9 @@ CONTROLLER_BINARY_MD5_CENTOS=5b92915cc4d258e2c6261a93339519e3
 
 INSTALLATION_DIR=/opt/ipop
 
-cat /etc/issue | grep Ubuntu > /dev/null && is_ubuntu=true
-#cat /etc/issue | grep CentOS > /dev/null && is_centos=true
-
-if [ -f /etc/centos-release ] ; then
+if [ -f /etc/debian_version ] ; then
+	is_debian=true
+elif [ -f /etc/centos-release ] ; then
 	is_centos=true
 fi
 
@@ -133,29 +132,21 @@ read -r -d '' SVPN_CONF <<EOT
 }
 EOT
 
-MSG_GENERAL_NEED_ROOT="Run with Root Privilege"
-MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="Controller Checksum Failed"
-MSG_INSTALL_INSTALLATION_FAILED="Installation Failed"
-MSG_INSTALL_INSTALLED_SUCCESSFULLY="Installed"
-MSG_CONFIG_OVERWRITE="IPOP already Configured. Do you want to overwrite it? [Y/n] "
-MSG_CONFIG_CFGTYPE="Which configuration do you want to install?
- 1) Group VPN
- 2) Social VPN
-Choose 1 or 2: "
-MSG_CONFIG_XMPP_HOST="xmpp_host?
-Enter xmpp_host: "
-MSG_CONFIG_XMPP_USERNAME="xmpp_username?
-Enter xmpp_username (ex. YOURUSERNAME@ejabberd): "
-MSG_CONFIG_XMPP_PASSWORD="xmpp_password?
-Enter xmpp_password: "
-MSG_CONFIG_IP4="ip4?
-Enter ip4 (ex. 192.168.5.1): "
-MSG_STAT_REPORT="Status Report On?
-IPOP is an openSource project. Setting the status report on, helps us show our financial supporters the actual number of our users and get more support from them. We don't collect any sensitive information and this is absolutely unharmful for users.
-Enter [y|N]: "
-MSG_CONFIG_CONFIGURED_SUCCESSFULLY="Configured Successfully"
-MSG_START_SUCCESS="Started"
-MSG_STOP_SUCCESS="Stopped"
+MSG_GENERAL_NEED_ROOT="\nOperation Failed - Run with Root Privilege\nMake sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough.\n"
+MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="\nOperation Failed - Controller Checksum Error\n"
+MSG_INSTALL_INSTALLATION_FAILED="\nInstallation Failed\n"
+MSG_INSTALL_INSTALLED_SUCCESSFULLY="\nInstalled\n"
+MSG_CONFIG_OVERWRITE="\nIPOP already Configured. Do you want to overwrite it? [Y/n]"
+MSG_CONFIG_CFGTYPE="\nWhich configuration do you want to install?\n 1) Group VPN\n 2) Social VPN\nChoose 1 or 2: "
+MSG_CONFIG_XMPP_HOST="xmpp_host?\nEnter xmpp_host: "
+MSG_CONFIG_XMPP_USERNAME="xmpp_username?\nEnter xmpp_username (ex. YOURUSERNAME@ejabberd): "
+MSG_CONFIG_XMPP_PASSWORD="xmpp_password?\nEnter xmpp_password: "
+MSG_CONFIG_IP4="ip4?\nEnter ip4 (ex. 192.168.5.1): "
+MSG_STAT_REPORT="\nStatus Report On?\nIPOP is an openSource project. Setting the status report on, helps us show our financial supporters the actual number of our users and get more support from them. We don't collect any sensitive information and this is absolutely unharmful for users.\nEnter [y|N]: "
+MSG_CONFIG_CONFIGURED_SUCCESSFULLY="\nConfigured Successfully\n"
+MSG_START_SUCCESS="\nStarted\n"
+MSG_STOP_SUCCESS="\nStopped\n"
+MSG_UNKNOWN_OS="\nOperation Failed - OS Not Detected\n"
 
 function prompt(){
 	retvar=$1
@@ -190,7 +181,7 @@ function i_am_root(){
 }
 function force_root(){
 	if ! i_am_root; then
-		echo "$MSG_GENERAL_NEED_ROOT"
+		echo -e "$MSG_GENERAL_NEED_ROOT"
 		exit 5
 	fi
 }
@@ -203,28 +194,28 @@ case "$action" in
 		mkdir -p "$INSTALLATION_DIR" 2>/dev/null
 		cd "$INSTALLATION_DIR"
 
-		if [ "$is_ubuntu" = true ]; then
+		if [ "$is_debian" = true ]; then
 			if ! (apt-get update && apt-get install -y psmisc wget ca-certificates python tcpdump) ; then
-				echo "$MSG_INSTALL_INSTALLATION_FAILED"
+				echo -e "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_UBUNTU" "$CONTROLLER_BINARY_URL_UBUNTU" && tar xvzf "$CONTROLLER_BINARY_NAME_UBUNTU"
 			if [ "$(md5sum $CONTROLLER_BINARY_NAME_UBUNTU | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_UBUNTU" ]; then
-				echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
+				echo -e "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
 				exit 3
 			fi
-		fi
-
-		if [ "$is_centos" = true ]; then
-			if ! (yum update -y && yum install -y psmisc wget ca-certificates python tcpdump) ; then
-				echo "$MSG_INSTALL_INSTALLATION_FAILED"
+		elif [ "$is_centos" = true ]; then
+			if ! (yum update && yum install -y psmisc wget ca-certificates python tcpdump) ; then
+				echo -e "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_CENTOS" "$CONTROLLER_BINARY_URL_CENTOS" && tar xvzf "$CONTROLLER_BINARY_NAME_CENTOS"
 			if [ "$(md5sum $CONTROLLER_BINARY_NAME_CENTOS | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_CENTOS" ]; then
-				echo $MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED
+				echo -e "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
 				exit 3
 			fi
+		else
+			echo -e "$MSG_UNKNOWN_OS"
 		fi
 
 		if [ ! -e /dev/net/tun ]; then
@@ -234,7 +225,7 @@ case "$action" in
 		fi
 
 		set_state installed
-		echo "$MSG_INSTALL_INSTALLED_SUCCESSFULLY"
+		echo -e "$MSG_INSTALL_INSTALLED_SUCCESSFULLY"
 		exit 0
 		;;
 
@@ -275,7 +266,7 @@ case "$action" in
 			sed "s~%IP4%~$ip4~g" |
 			sed "s~%STAT_REPORT_BOOLEAN%~$STAT_REPORT_BOOLEAN~g" > "$CONF_FILE"
 
-		echo "$MSG_CONFIG_CONFIGURED_SUCCESSFULLY"
+		echo -e "$MSG_CONFIG_CONFIGURED_SUCCESSFULLY"
 		;;
 
 	start)
@@ -284,7 +275,7 @@ case "$action" in
 		[ -d log ] || mkdir log
 		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
 		python -m controller.Controller -c config/config.json &> log/log.txt &
-		echo "$MSG_START_SUCCESS"
+		echo -e "$MSG_START_SUCCESS"
 		exit 0
 		;;
 
@@ -292,7 +283,7 @@ case "$action" in
 		force_root
 		ps aux | grep -v grep | grep ipop-tincan | awk '{print $2}' | xargs sudo kill -9
 		ps aux | grep -v grep | grep controller.Controller | awk '{print $2}' | xargs sudo kill -9
-		echo "$MSG_STOP_SUCCESS"
+		echo -e "$MSG_STOP_SUCCESS"
 		exit 0
 		;;
 
@@ -301,7 +292,7 @@ case "$action" in
 		;;
 
 	*)
-		echo "Usage: $SCRIPTNAME {install|config|start|stop|status}" >&2
+		echo "\nWrong Command\nUsage: $SCRIPTNAME {install|config|start|stop|status}\n" >&2
 		exit 3
 		;;
 esac

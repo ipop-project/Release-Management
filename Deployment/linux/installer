@@ -6,7 +6,7 @@ IPOP_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/maste
 
 INSTALLATION_DIR=/opt/ipop
 
-MSG_GENERAL_NEED_ROOT="Run with Root Privilege"
+MSG_GENERAL_NEED_ROOT="\nOperation Failed - Run with Root Privilege\nMake sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough.\n"
 
 function i_am_root(){
 	return $EUID
@@ -14,7 +14,7 @@ function i_am_root(){
 
 function force_root(){
 	if ! i_am_root; then
-		echo "$MSG_GENERAL_NEED_ROOT"
+		echo -e "$MSG_GENERAL_NEED_ROOT"
 		exit 5
 	fi
 }
