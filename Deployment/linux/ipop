@@ -1,11 +1,11 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_ubuntu.tar.gz
-CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_centos7.tar.gz
-CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.0_ubuntu.tar.gz
-CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.0_centos7.tar.gz
-CONTROLLER_BINARY_MD5_UBUNTU=bd5e58a94ea2ececbfd57c5d9de13ab2
-CONTROLLER_BINARY_MD5_CENTOS=5b92915cc4d258e2c6261a93339519e3
+CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/untagged-7cdcc4838d2c903a3410/ipop-v16.01.01_ubuntu.tar.gz
+CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/untagged-7cdcc4838d2c903a3410/ipop-v16.01.01_centos7.tar.gz
+CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.01_ubuntu.tar.gz
+CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.01_centos7.tar.gz
+CONTROLLER_BINARY_MD5_UBUNTU=01097c487536e87f06fa27f15a67b171
+CONTROLLER_BINARY_MD5_CENTOS=383b1641dcb8d020eb929dd437a351e8
 
 INSTALLATION_DIR=/opt/ipop
 
