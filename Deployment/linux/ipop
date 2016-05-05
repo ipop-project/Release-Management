@@ -246,12 +246,12 @@ case "$action" in
 		;;
 
 	config)
-		if [ -f "config/config.json" ]; then
-			prompt overwrite_config ".*" "$MSG_CONFIG_OVERWRITE"
-			if [ "$overwrite_config" != "y" ]; then
-				exit 2
-			fi
-		fi
+#		if [ -f "config/config.json" ]; then
+#			prompt overwrite_config ".*" "$MSG_CONFIG_OVERWRITE"
+#			if [ "$overwrite_config" != "y" ]; then
+#				exit 2
+#			fi
+#		fi
 		prompt vpn_type "[1-2]" "$MSG_CONFIG_CFGTYPE"
 		prompt xmpp_host "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_HOST"
 		prompt xmpp_username "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_USERNAME"
