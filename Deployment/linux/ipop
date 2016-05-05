@@ -213,10 +213,10 @@ case "$action" in
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_UBUNTU" "$CONTROLLER_BINARY_URL_UBUNTU" && tar xvzf "$CONTROLLER_BINARY_NAME_UBUNTU"
-			if [ "$(md5sum $CONTROLLER_BINARY_NAME_UBUNTU | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_UBUNTU" ]; then
-				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
-				exit 3
-			fi
+#			if [ "$(md5sum $CONTROLLER_BINARY_NAME_UBUNTU | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_UBUNTU" ]; then
+#				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
+#				exit 3
+#			fi
 
 		elif [ "$is_centos" = true ]; then
 			if ! (yum update && yum install -y psmisc wget ca-certificates python tcpdump) ; then
@@ -224,10 +224,10 @@ case "$action" in
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_CENTOS" "$CONTROLLER_BINARY_URL_CENTOS" && tar xvzf "$CONTROLLER_BINARY_NAME_CENTOS"
-			if [ "$(md5sum $CONTROLLER_BINARY_NAME_CENTOS | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_CENTOS" ]; then
-				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
-				exit 3
-			fi
+#			if [ "$(md5sum $CONTROLLER_BINARY_NAME_CENTOS | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_CENTOS" ]; then
+#				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
+#				exit 3
+#			fi
 
 		else
 			echo "$MSG_UNSUPPORTED_OS"
