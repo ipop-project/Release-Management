@@ -246,7 +246,7 @@ case "$action" in
 		;;
 
 	config)
-		if [ -f "config.json" ]; then
+		if [ -f "config/config.json" ]; then
 			prompt overwrite_config ".*" "$MSG_CONFIG_OVERWRITE"
 			if [ "$overwrite_config" != "y" ]; then
 				exit 2
