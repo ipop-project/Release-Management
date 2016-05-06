@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Usage: wget -O - http://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
+# Usage: wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/installer | /bin/bash
 
 IPOP_URL=https://raw.githubusercontent.com/ipop-project/Release-Management/master/Deployment/linux/ipop
 
 INSTALLATION_DIR=/opt/ipop
 
-MSG_GENERAL_NEED_ROOT="\nOperation Failed - Run with Root Privilege\nMake sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough.\n"
+MSG_GENERAL_NEED_ROOT="
+Run with Root Privilege
+Make sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough."
 
 function i_am_root(){
 	return $EUID
@@ -14,7 +16,7 @@ function i_am_root(){
 
 function force_root(){
 	if ! i_am_root; then
-		echo -e "$MSG_GENERAL_NEED_ROOT"
+		echo "$MSG_GENERAL_NEED_ROOT"
 		exit 5
 	fi
 }

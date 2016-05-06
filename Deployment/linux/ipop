@@ -1,152 +1,180 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_ubuntu.tar.gz
-CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.0/ipop-v16.01.0_centos7.tar.gz
-CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.0_ubuntu.tar.gz
-CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.0_centos7.tar.gz
-CONTROLLER_BINARY_MD5_UBUNTU=bd5e58a94ea2ececbfd57c5d9de13ab2
-CONTROLLER_BINARY_MD5_CENTOS=5b92915cc4d258e2c6261a93339519e3
+CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.1_ubuntu.tar.gz
+CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.1_centos7.tar.gz
+CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.1_ubuntu.tar.gz
+CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.1_centos7.tar.gz
+CONTROLLER_BINARY_MD5_UBUNTU=01097c487536e87f06fa27f15a67b171
+CONTROLLER_BINARY_MD5_CENTOS=383b1641dcb8d020eb929dd437a351e8
 
 INSTALLATION_DIR=/opt/ipop
 
 if [ -f /etc/debian_version ] ; then
 	is_debian=true
+
 elif [ -f /etc/centos-release ] ; then
 	is_centos=true
+
 fi
 
 read -r -d '' GVPN_CONF <<EOT
 {
-    "CFx": {
-        "xmpp_username": "%XMPP_USERNAME%",
-        "xmpp_password": "%XMPP_PASSWORD%",
-        "xmpp_host": "%XMPP_HOST%",
-        "tincan_logging": 0,
-        "vpn_type": "GroupVPN",
-        "ip4_mask": 16
-    },
-        "Logger": {
-        "controller_logging": "ERROR"
-    },
-        "TincanDispatcher": {
-        "dependencies": ["Logger"]
-    },
-        "TincanListener" : {
-        "socket_read_wait_time": 15,
-        "dependencies": ["Logger", "TincanDispatcher"]
-    },
-        "TincanSender": {
-        "switchmode": 0,
-        "dependencies": ["Logger"]
-    },
-        "BaseTopologyManager": {
-        "ip4": "%IP4%",
-        "sec": true,
-        "multihop": false,
-        "num_successors": 8,
-        "num_chords": 8,
-        "num_on_demand": 20,
-        "num_inbound": 40,
-        "ttl_link_initial": 60,
-        "ttl_link_pulse": 30,
-        "ttl_chord": 180,
-        "ttl_on_demand": 6000,
-        "threshold_on_demand": 128,
-        "timer_interval": 1,
-        "interval_management": 15,
-        "use_central_visualizer": false,
-        "interval_central_visualizer": 5,
-        "dependencies": ["Logger"]
-    },
-        "LinkManager": {
-        "dependencies": ["Logger"]
-    },
-        "StatReport": {
-        "enabled": %STAT_REPORT_BOOLEAN%,
-        "stat_server": "metrics.ipop-project.org",
-        "stat_server_port": 8080,
-        "timer_interval": 200
-    },
-        "CentralVisualizer": {
-        "enabled": false,
-        "central_visualizer_addr": "",
-        "central_visualizer_port": 51234,
-        "dependencies": ["Logger"]
-    }
+  "CFx": {
+    "xmpp_username": "%XMPP_USERNAME%",
+    "xmpp_password": "%XMPP_PASSWORD%",
+    "xmpp_host": "%XMPP_HOST%",
+    "xmpp_port": 5222,
+    "tincan_logging": 0,
+    "vpn_type": "GroupVPN",
+    "ip4_mask": 16
+  },
+  "Logger": {
+    "controller_logging": "ERROR"
+  },
+  "TincanDispatcher": {
+    "dependencies": ["Logger"]
+  },
+  "TincanListener" : {
+    "socket_read_wait_time": 15,
+    "dependencies": ["Logger", "TincanDispatcher"]
+  },
+  "TincanSender": {
+    "switchmode": 0,
+    "dependencies": ["Logger"]
+  },
+  "BaseTopologyManager": {
+    "ip4": "%IP4%",
+    "sec": true,
+    "multihop": false,
+    "num_successors": 20,
+    "num_chords": 10,
+    "num_on_demand": 20,
+    "num_inbound": 50,
+    "ttl_link_initial": 60,
+    "ttl_link_pulse": 30,
+    "ttl_chord": 180,
+    "ttl_on_demand": 240,
+    "threshold_on_demand": 128,
+    "timer_interval": 1,
+    "interval_management": 15,
+    "use_central_visualizer": false,
+    "interval_central_visualizer": 5,
+    "num_pings": 5,
+    "interval_ping": 300,
+    "dependencies": ["Logger"]
+  },
+  "LinkManager": {
+    "dependencies": ["Logger"]
+  },
+  "StatReport": {
+    "enabled": %STAT_REPORT_BOOLEAN%,
+    "stat_server": "metrics.ipop-project.org",
+    "stat_server_port": 8080,
+    "timer_interval": 200,
+    "dependencies": ["Logger"]
+  },
+  "CentralVisualizer": {
+    "enabled": false,
+    "name": "",
+    "central_visualizer_addr": "",
+    "central_visualizer_port": 51234,
+    "dependencies": ["Logger"]
+  }
 }
 EOT
 
 read -r -d '' SVPN_CONF <<EOT
 {
-    "CFx": {
-        "xmpp_username": "%XMPP_USERNAME%",
-        "xmpp_password": "%XMPP_PASSWORD%",
-        "xmpp_host": "%XMPP_HOST%",
-        "tincan_logging": 0,
-        "vpn_type": "SocialVPN",
-        "ip4_mask": 24
-    },
-    "Logger": {
-        "controller_logging": "ERROR"
-    },
-    "TincanDispatcher": {
-        "dependencies": ["Logger"]
-    },
-	"TincanListener" : {
-        "socket_read_wait_time": 15,
-        "dependencies": ["Logger", "TincanDispatcher"]
-    },
-    "TincanSender": {
-        "dependencies": ["Logger"]
-    },
-    "Monitor": {
-        "trigger_con_wait_time": 120,
-        "dependencies": ["Logger"]
-    },
-    "BaseTopologyManager": {
-        "link_trimmer_wait_time": 30,
-        "on-demand_connection": false,
-        "on-demand_inactive_timeout": 600,
-        "multihop": false,
-        "sec": true,
-        "timer_interval": 15,
-        "dependencies": ["Logger"]
-    },
-    "LinkManager": {
-        "dependencies": ["Logger"]
-    },
-    "AddressMapper": {
-        "ip4": "%IP4%",
-        "dependencies": ["Logger"]
-    },
-    "Watchdog": {
-        "timer_interval": 10,
-        "dependencies": ["Logger"]
-    },
-    "StatReport": {
-        "enabled": %STAT_REPORT_BOOLEAN%,
-        "stat_server": "metrics.ipop-project.org",
-        "stat_server_port": 8080,
-        "timer_interval": 200
-    }
+  "CFx": {
+    "xmpp_username": "%XMPP_USERNAME%",
+    "xmpp_password": "%XMPP_PASSWORD%",
+    "xmpp_host": "%XMPP_HOST%",
+    "xmpp_port": 5222,
+    "tincan_logging": 0,
+    "vpn_type": "SocialVPN",
+    "ip4_mask": 24
+  },
+  "Logger": {
+    "controller_logging": "ERROR"
+  },
+  "TincanDispatcher": {
+    "dependencies": ["Logger"]
+  },
+  "TincanListener" : {
+    "socket_read_wait_time": 15,
+    "dependencies": ["Logger", "TincanDispatcher"]
+  },
+  "TincanSender": {
+    "dependencies": ["Logger"]
+  },
+  "Monitor": {
+    "trigger_con_wait_time": 120,
+    "use_central_visualizer": false,
+    "dependencies": ["Logger"]
+  },
+  "BaseTopologyManager": {
+    "link_trimmer_wait_time": 30,
+    "on-demand_connection": false,
+    "on-demand_inactive_timeout": 600,
+    "multihop": false,
+    "sec": true,
+    "timer_interval": 15,
+    "dependencies": ["Logger"]
+  },
+  "LinkManager": {
+    "dependencies": ["Logger"]
+  },
+  "AddressMapper": {
+    "ip4": "%IP4%",
+    "dependencies": ["Logger"]
+  },
+  "Watchdog": {
+    "timer_interval": 10,
+    "dependencies": ["Logger"]
+  },
+  "StatReport": {
+    "enabled": %STAT_REPORT_BOOLEAN%,
+    "stat_server": "metrics.ipop-project.org",
+    "stat_server_port": 8080,
+    "timer_interval": 200,
+    "dependencies": ["Logger"]
+  },
+  "CentralVisualizer": {
+    "enabled": false,
+    "name": "",
+    "central_visualizer_addr": "",
+    "central_visualizer_port": 51234,
+    "dependencies": ["Logger"]
+  }
 }
 EOT
 
-MSG_GENERAL_NEED_ROOT="\nOperation Failed - Run with Root Privilege\nMake sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough.\n"
-MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="\nOperation Failed - Controller Checksum Error\n"
-MSG_INSTALL_INSTALLATION_FAILED="\nInstallation Failed\n"
-MSG_INSTALL_INSTALLED_SUCCESSFULLY="\nInstalled\n"
-MSG_CONFIG_OVERWRITE="\nIPOP already Configured. Do you want to overwrite it? [Y/n]"
-MSG_CONFIG_CFGTYPE="\nWhich configuration do you want to install?\n 1) Group VPN\n 2) Social VPN\nChoose 1 or 2: "
-MSG_CONFIG_XMPP_HOST="xmpp_host?\nEnter xmpp_host: "
-MSG_CONFIG_XMPP_USERNAME="xmpp_username?\nEnter xmpp_username (ex. YOURUSERNAME@ejabberd): "
-MSG_CONFIG_XMPP_PASSWORD="xmpp_password?\nEnter xmpp_password: "
-MSG_CONFIG_IP4="ip4?\nEnter ip4 (ex. 192.168.5.1): "
-MSG_STAT_REPORT="\nStatus Report On?\nIPOP is an openSource project. Setting the status report on, helps us show our financial supporters the actual number of our users and get more support from them. We don't collect any sensitive information and this is absolutely unharmful for users.\nEnter [y|N]: "
-MSG_CONFIG_CONFIGURED_SUCCESSFULLY="\nConfigured Successfully\n"
-MSG_START_SUCCESS="\nStarted\n"
-MSG_STOP_SUCCESS="\nStopped\n"
-MSG_UNKNOWN_OS="\nOperation Failed - OS Not Detected\n"
+MSG_GENERAL_NEED_ROOT="
+Run with Root Privilege
+Make sure you have already switched to interactive root shell using 'sudo -i' before running the above command. Running it with just adding 'sudo' to the beginning is not enough."
+MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED="Controller Checksum Failed"
+MSG_INSTALL_INSTALLATION_FAILED="Installation Failed"
+MSG_INSTALL_INSTALLED_SUCCESSFULLY="Installed"
+MSG_CONFIG_OVERWRITE="IPOP is already configured. Do you want to overwrite it? [Y/n] "
+MSG_CONFIG_CFGTYPE="Which configuration do you want to install?
+ 1) Group VPN
+ 2) Social VPN
+Choose 1 or 2: "
+MSG_CONFIG_XMPP_HOST="xmpp_host?
+Enter xmpp_host: "
+MSG_CONFIG_XMPP_USERNAME="xmpp_username?
+Enter xmpp_username (ex. YOURUSERNAME@ejabberd): "
+MSG_CONFIG_XMPP_PASSWORD="xmpp_password?
+Enter xmpp_password: "
+MSG_CONFIG_IP4="ip4?
+Enter ip4 (ex. 192.168.5.1): "
+MSG_STAT_REPORT="Status Report On?
+IPOP is an openSource project. Setting the status report on, helps us show our financial supporters the actual number of our users and get more support from them. We don't collect any sensitive information and this is absolutely unharmful for users.
+Enter [y|N]: "
+MSG_CONFIG_CONFIGURED_SUCCESSFULLY="Configured Successfully"
+MSG_START_SUCCESS="Started"
+MSG_STOP_SUCCESS="Stopped"
+MSG_UNSUPPORTED_OS="Unsupported Operating System - IPOP currently works on CentOS and Debian based Linux distributions such as Debian, Ubuntu, Mint, and Raspbian."
 
 function prompt(){
 	retvar=$1
@@ -181,7 +209,7 @@ function i_am_root(){
 }
 function force_root(){
 	if ! i_am_root; then
-		echo -e "$MSG_GENERAL_NEED_ROOT"
+		echo "$MSG_GENERAL_NEED_ROOT"
 		exit 5
 	fi
 }
@@ -196,26 +224,29 @@ case "$action" in
 
 		if [ "$is_debian" = true ]; then
 			if ! (apt-get update && apt-get install -y psmisc wget ca-certificates python tcpdump) ; then
-				echo -e "$MSG_INSTALL_INSTALLATION_FAILED"
+				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_UBUNTU" "$CONTROLLER_BINARY_URL_UBUNTU" && tar xvzf "$CONTROLLER_BINARY_NAME_UBUNTU"
 			if [ "$(md5sum $CONTROLLER_BINARY_NAME_UBUNTU | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_UBUNTU" ]; then
-				echo -e "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
+				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
 				exit 3
 			fi
+
 		elif [ "$is_centos" = true ]; then
 			if ! (yum update && yum install -y psmisc wget ca-certificates python tcpdump) ; then
-				echo -e "$MSG_INSTALL_INSTALLATION_FAILED"
+				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
 			wget -O "$CONTROLLER_BINARY_NAME_CENTOS" "$CONTROLLER_BINARY_URL_CENTOS" && tar xvzf "$CONTROLLER_BINARY_NAME_CENTOS"
 			if [ "$(md5sum $CONTROLLER_BINARY_NAME_CENTOS | awk '{print $1}')" != "$CONTROLLER_BINARY_MD5_CENTOS" ]; then
-				echo -e "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
+				echo "$MSG_INSTALL_CONTROLLER_CHECKSUM_FAILED"
 				exit 3
 			fi
+
 		else
-			echo -e "$MSG_UNKNOWN_OS"
+			echo "$MSG_UNSUPPORTED_OS"
+
 		fi
 
 		if [ ! -e /dev/net/tun ]; then
@@ -225,17 +256,11 @@ case "$action" in
 		fi
 
 		set_state installed
-		echo -e "$MSG_INSTALL_INSTALLED_SUCCESSFULLY"
+		echo "$MSG_INSTALL_INSTALLED_SUCCESSFULLY"
 		exit 0
 		;;
 
 	config)
-		if [ -f "config.json" ]; then
-			prompt overwrite_config ".*" "$MSG_CONFIG_OVERWRITE"
-			if [ "$overwrite_config" != "y" ]; then
-				exit 2
-			fi
-		fi
 		prompt vpn_type "[1-2]" "$MSG_CONFIG_CFGTYPE"
 		prompt xmpp_host "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_HOST"
 		prompt xmpp_username "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_USERNAME"
@@ -266,7 +291,7 @@ case "$action" in
 			sed "s~%IP4%~$ip4~g" |
 			sed "s~%STAT_REPORT_BOOLEAN%~$STAT_REPORT_BOOLEAN~g" > "$CONF_FILE"
 
-		echo -e "$MSG_CONFIG_CONFIGURED_SUCCESSFULLY"
+		echo "$MSG_CONFIG_CONFIGURED_SUCCESSFULLY"
 		;;
 
 	start)
@@ -275,7 +300,7 @@ case "$action" in
 		[ -d log ] || mkdir log
 		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
 		python -m controller.Controller -c config/config.json &> log/log.txt &
-		echo -e "$MSG_START_SUCCESS"
+		echo "$MSG_START_SUCCESS"
 		exit 0
 		;;
 
@@ -283,7 +308,7 @@ case "$action" in
 		force_root
 		ps aux | grep -v grep | grep ipop-tincan | awk '{print $2}' | xargs sudo kill -9
 		ps aux | grep -v grep | grep controller.Controller | awk '{print $2}' | xargs sudo kill -9
-		echo -e "$MSG_STOP_SUCCESS"
+		echo "$MSG_STOP_SUCCESS"
 		exit 0
 		;;
 
@@ -292,7 +317,7 @@ case "$action" in
 		;;
 
 	*)
-		echo "\nWrong Command\nUsage: $SCRIPTNAME {install|config|start|stop|status}\n" >&2
+		echo "Usage: $SCRIPTNAME {install|config|start|stop|status}" >&2
 		exit 3
 		;;
 esac
