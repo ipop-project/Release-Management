@@ -48,6 +48,20 @@ Instantiate this profile as to create an experiment.
 
 Open the ```List View``` tab to view the connections. Copy the connections (of the form ```<username>@<hostname>```) into ```scale/scale.cfg``` as ```NODE```, ```SERVER```, or ```FORWARDER```. Also specify the ```SIZE``` (the number of IPOP instances)
 
+Optionally, specify the IPOP controller and tincan versions by assigning the ```CONTROLLER``` (commit/tag) and ```TINCAN``` (release version) fields in ```scale/scale.cfg```. When these fields are left unspecified, Scale-Test defaults to the latest release version.
+
+For example, the following configuration has 1 node (assuming all roles) with 20 LXCs using version 16.01.0 of the IPOP controller and tincan:
+
+```
+NODE       ipopuser@c220g2-010618.wisc.cloudlab.us
+SERVER     ipopuser@c220g2-010618.wisc.cloudlab.us
+FORWARDER  ipopuser@c220g2-010618.wisc.cloudlab.us
+SIZE       20
+
+CONTROLLER v16.01.0
+TINCAN     v16.01.0
+```
+
 Run the bash script:
 
 ```bash scale/scale.bash```
@@ -55,7 +69,7 @@ Run the bash script:
 Enter the following commands:
 
 ```
-download  # retrieves the latest release of IPOP
+download  # retrieves the IPOP sources specified by CONTROLLER and TINCAN or the defaults
 accept    # enter 'yes' if prompted
 install
 init
@@ -110,6 +124,10 @@ visualize <forwarder port> <gvpn | svpn>
 
 #### Using the Ubuntu 14.04 LTS
 
-By default, Scale-Test only supports Ubuntu 15.04. To use Ubuntu 14.04 LTS, modify ```scale/node/node.bash``` and set the variable ```NEW_TEST``` to ```false``` prior to deployment. The usage for Scale-Test is the same.
+By default, Scale-Test only supports Ubuntu 15.04. To use Ubuntu 14.04 LTS, modify ```scale/node/node.bash``` and set the variable ```NEW_TEST``` to ```false``` prior to deployment.
 
 A reference profile with one physical-node and 20 LXC-nodes is available: ```IPOP_SCALE_TEST_1_TRUSTY```
+
+#### Running IPOP with python3
+
+By default, IPOP instances are ran with python2. To run IPOP with python3, modify ```scale/node/ipop/ipop.bash``` and set the variable ```PYTHON``` to ```python3``` prior to deployment.

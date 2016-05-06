@@ -9,6 +9,7 @@ import sys                          # arguments and exit
 import socket                       # listener
 import json                         # decoding packets
 import os                           # full process exit
+import traceback                    # informative traceback
 
 class Canvas(object):
     def __init__(self):
@@ -104,6 +105,7 @@ def listener(protocol, recv_ipv4, recv_port):
             _lock.release()
 
     except:
+        print(traceback.format_exc())
         os._exit(1)
 
 ### main / drawer thread
@@ -172,7 +174,7 @@ def main():
                                     nr_on_demand_links = nr_on_demand_links + 1
                                 _canvas.draw_line(node["vis_x"], node["vis_y"], _nodes[peer]["vis_x"], _nodes[peer]["vis_y"], color)
                                 nr_links = nr_links + 1
-                    else: #svpn
+                    elif _vpn_type == 'svpn':
                         for peer in node["links"]:
                             if peer in _nodes:
                                 _canvas.draw_line(node["vis_x"], node["vis_y"], _nodes[peer]["vis_x"], _nodes[peer]["vis_y"], 'white')
@@ -221,7 +223,10 @@ def main():
             time.sleep(0.2)
             _canvas.clear()
 
-    except tkinter.TclError:
+    except tkinter.TclError: # exception on closed window
+        os._exit(1)
+    except:
+        print(traceback.format_exc())
         os._exit(1)
 
 if __name__ == "__main__":

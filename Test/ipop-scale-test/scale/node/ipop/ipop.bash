@@ -9,6 +9,8 @@ IPOP_CONFIG="./ipop-config.json"
 LOG_TIN="./tin.log"
 LOG_CTR="./ctr.log"
 
+PYTHON="python2"
+
 case $1 in
 
     ("run")
@@ -27,11 +29,11 @@ case $1 in
         if [ "$2" == '--verbose' ]; then
             # run IPOP tincan
             sudo $IPOP_TINCAN &> $LOG_TIN &
-            python -m $IPOP_CONTROLLER -c $IPOP_CONFIG &
+            $PYTHON -m $IPOP_CONTROLLER -c $IPOP_CONFIG &
         else
             # run IPOP tincan
             sudo $IPOP_TINCAN &> $LOG_TIN &
-            python -m $IPOP_CONTROLLER -c $IPOP_CONFIG &> $LOG_CTR &
+            $PYTHON -m $IPOP_CONTROLLER -c $IPOP_CONFIG &> $LOG_CTR &
         fi
         ;;
     ("kill")

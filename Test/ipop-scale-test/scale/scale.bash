@@ -2,9 +2,8 @@
 
 # Ubuntu 15.04 URN: urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU15-04-64-STD
 
-DOWNLOAD="https://github.com/ipop-project/Downloads/releases/download"
-RELEASEDIR="v16.01.0.rc3"
-RELEASENAME="ipop-v16.01.0-RC3_Ubuntu"
+IPOP_CONTROLLER_COMMIT="v16.01.0"
+IPOP_TINCAN_VER="v16.01.0"
 
 CONF_FILE="./scale.cfg"
 NODE_PATH="./node"
@@ -41,6 +40,10 @@ while read line; do
             FORWARDER=$arg;;
         ("SIZE")
             SIZE=$arg;;
+        ("CONTROLLER")
+            IPOP_CONTROLLER_COMMIT=$arg;;
+        ("TINCAN")
+            IPOP_TINCAN_VER=$arg;;
     esac
 done < $CONF_FILE
 NR_NODES=${#NODES[@]}
@@ -55,14 +58,24 @@ while true; do
     case $cmd in
 
         ("download")
-            # download controller sources and ipop-tincan binary from ipop-project/Downloads
-            # TODO static link address
-            wget $DOWNLOAD/$RELEASEDIR/$RELEASENAME.tar.gz
-            tar xf $RELEASENAME.tar.gz
-            cp -r $RELEASENAME/controller node/ipop/
-            cp $RELEASENAME/ipop-tincan node/ipop/
-            rm -r $RELEASENAME
-            rm $RELEASENAME.tar.gz
+            IPOP_CONTROLLER_REPO="https://github.com/ipop-project/controllers"
+            IPOP_TINCAN_URL="https://github.com/ipop-project/Downloads/releases/download/$IPOP_TINCAN_VER/ipop-${IPOP_TINCAN_VER}_ubuntu.tar.gz"
+
+            mkdir tmp.sources; cd tmp.sources
+
+            # obtain controller sources
+            git clone $IPOP_CONTROLLER_REPO
+            cd controllers
+            git checkout $IPOP_CONTROLLER_COMMIT
+            cd ..
+            cp -r controllers/controller ../node/ipop/
+
+            # obtain ipop-tincan binary
+            wget $IPOP_TINCAN_URL
+            tar xf ipop-${IPOP_TINCAN_VER}_ubuntu.tar.gz
+            cp ipop-tincan ../node/ipop/
+
+            cd ..; #rm -rf tmp.sources
             ;;
         ("accept")
             echo "enter 'yes' to add a node to the list of known hosts"
@@ -80,6 +93,7 @@ while true; do
                 " &
             done
             wait
+            rm node.tar.gz
             ;;
         ("init")
             if [ "${args[0]}" != "" ]; then
@@ -98,7 +112,6 @@ while true; do
 
             # initialize ejabberd
             ssh $SERVER "bash $NODE_NODE_SCRIPT init-server $SIZE"
-
             ;;
         ("restart")
             ssh $SERVER "bash $NODE_NODE_SCRIPT restart-server"
@@ -123,6 +136,7 @@ while true; do
                 " &
             done
             wait
+            rm node.tar.gz
             ;;
         ("config")
             vpn_type=(${args[0]})
@@ -199,7 +213,7 @@ while true; do
         (*)
             echo 'usage:'
             echo '  platform management:'
-#            echo '    download                       : download controller sources and ipop-tincan binary'
+            echo '    download                       : download controller sources and ipop-tincan binary'
             echo '    accept                         : manually enable connections'
             echo '    install                        : install/prepare resources'
             echo '    init      [size]               : initialize platform'
