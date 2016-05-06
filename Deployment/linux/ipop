@@ -1,9 +1,9 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.01/ipop-v16.01.01_ubuntu.tar.gz
-CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.01/ipop-v16.01.01_centos7.tar.gz
-CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.01_ubuntu.tar.gz
-CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.01_centos7.tar.gz
+CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.01_ubuntu.tar.gz
+CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.01_centos7.tar.gz
+CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.1_ubuntu.tar.gz
+CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.1_centos7.tar.gz
 CONTROLLER_BINARY_MD5_UBUNTU=01097c487536e87f06fa27f15a67b171
 CONTROLLER_BINARY_MD5_CENTOS=383b1641dcb8d020eb929dd437a351e8
 
@@ -19,118 +19,133 @@ fi
 
 read -r -d '' GVPN_CONF <<EOT
 {
-    "CFx": {
-        "xmpp_username": "%XMPP_USERNAME%",
-        "xmpp_password": "%XMPP_PASSWORD%",
-        "xmpp_host": "%XMPP_HOST%",
-        "tincan_logging": 0,
-        "vpn_type": "GroupVPN",
-        "ip4_mask": 16
-    },
-        "Logger": {
-        "controller_logging": "ERROR"
-    },
-        "TincanDispatcher": {
-        "dependencies": ["Logger"]
-    },
-        "TincanListener" : {
-        "socket_read_wait_time": 15,
-        "dependencies": ["Logger", "TincanDispatcher"]
-    },
-        "TincanSender": {
-        "switchmode": 0,
-        "dependencies": ["Logger"]
-    },
-        "BaseTopologyManager": {
-        "ip4": "%IP4%",
-        "sec": true,
-        "multihop": false,
-        "num_successors": 8,
-        "num_chords": 8,
-        "num_on_demand": 20,
-        "num_inbound": 40,
-        "ttl_link_initial": 60,
-        "ttl_link_pulse": 30,
-        "ttl_chord": 180,
-        "ttl_on_demand": 6000,
-        "threshold_on_demand": 128,
-        "timer_interval": 1,
-        "interval_management": 15,
-        "use_central_visualizer": false,
-        "interval_central_visualizer": 5,
-        "dependencies": ["Logger"]
-    },
-        "LinkManager": {
-        "dependencies": ["Logger"]
-    },
-        "StatReport": {
-        "enabled": %STAT_REPORT_BOOLEAN%,
-        "stat_server": "metrics.ipop-project.org",
-        "stat_server_port": 8080,
-        "timer_interval": 200
-    },
-        "CentralVisualizer": {
-        "enabled": false,
-        "central_visualizer_addr": "",
-        "central_visualizer_port": 51234,
-        "dependencies": ["Logger"]
-    }
+  "CFx": {
+    "xmpp_username": "",
+    "xmpp_password": "",
+    "xmpp_host": "",
+    "xmpp_port": 5222,
+    "tincan_logging": 0,
+    "vpn_type": "GroupVPN",
+    "ip4_mask": 16
+  },
+  "Logger": {
+    "controller_logging": "ERROR"
+  },
+  "TincanDispatcher": {
+    "dependencies": ["Logger"]
+  },
+  "TincanListener" : {
+    "socket_read_wait_time": 15,
+    "dependencies": ["Logger", "TincanDispatcher"]
+  },
+  "TincanSender": {
+    "switchmode": 0,
+    "dependencies": ["Logger"]
+  },
+  "BaseTopologyManager": {
+    "ip4": "172.31.0.100",
+    "sec": true,
+    "multihop": false,
+    "num_successors": 20,
+    "num_chords": 10,
+    "num_on_demand": 20,
+    "num_inbound": 50,
+    "ttl_link_initial": 60,
+    "ttl_link_pulse": 30,
+    "ttl_chord": 180,
+    "ttl_on_demand": 240,
+    "threshold_on_demand": 128,
+    "timer_interval": 1,
+    "interval_management": 15,
+    "use_central_visualizer": false,
+    "interval_central_visualizer": 5,
+    "num_pings": 5,
+    "interval_ping": 300,
+    "dependencies": ["Logger"]
+  },
+  "LinkManager": {
+    "dependencies": ["Logger"]
+  },
+  "StatReport": {
+    "enabled": true,
+    "stat_server": "metrics.ipop-project.org",
+    "stat_server_port": 8080,
+    "timer_interval": 200,
+    "dependencies": ["Logger"]
+  },
+  "CentralVisualizer": {
+    "enabled": false,
+    "name": "",
+    "central_visualizer_addr": "",
+    "central_visualizer_port": 51234,
+    "dependencies": ["Logger"]
+  }
 }
 EOT
 
 read -r -d '' SVPN_CONF <<EOT
 {
-    "CFx": {
-        "xmpp_username": "%XMPP_USERNAME%",
-        "xmpp_password": "%XMPP_PASSWORD%",
-        "xmpp_host": "%XMPP_HOST%",
-        "tincan_logging": 0,
-        "vpn_type": "SocialVPN",
-        "ip4_mask": 24
-    },
-    "Logger": {
-        "controller_logging": "ERROR"
-    },
-    "TincanDispatcher": {
-        "dependencies": ["Logger"]
-    },
-	"TincanListener" : {
-        "socket_read_wait_time": 15,
-        "dependencies": ["Logger", "TincanDispatcher"]
-    },
-    "TincanSender": {
-        "dependencies": ["Logger"]
-    },
-    "Monitor": {
-        "trigger_con_wait_time": 120,
-        "dependencies": ["Logger"]
-    },
-    "BaseTopologyManager": {
-        "link_trimmer_wait_time": 30,
-        "on-demand_connection": false,
-        "on-demand_inactive_timeout": 600,
-        "multihop": false,
-        "sec": true,
-        "timer_interval": 15,
-        "dependencies": ["Logger"]
-    },
-    "LinkManager": {
-        "dependencies": ["Logger"]
-    },
-    "AddressMapper": {
-        "ip4": "%IP4%",
-        "dependencies": ["Logger"]
-    },
-    "Watchdog": {
-        "timer_interval": 10,
-        "dependencies": ["Logger"]
-    },
-    "StatReport": {
-        "enabled": %STAT_REPORT_BOOLEAN%,
-        "stat_server": "metrics.ipop-project.org",
-        "stat_server_port": 8080,
-        "timer_interval": 200
-    }
+  "CFx": {
+    "xmpp_username": "",
+    "xmpp_password": "",
+    "xmpp_host": "",
+    "xmpp_port": 5222,
+    "tincan_logging": 0,
+    "vpn_type": "SocialVPN",
+    "ip4_mask": 24
+  },
+  "Logger": {
+    "controller_logging": "ERROR"
+  },
+  "TincanDispatcher": {
+    "dependencies": ["Logger"]
+  },
+  "TincanListener" : {
+    "socket_read_wait_time": 15,
+    "dependencies": ["Logger", "TincanDispatcher"]
+  },
+  "TincanSender": {
+    "dependencies": ["Logger"]
+  },
+  "Monitor": {
+    "trigger_con_wait_time": 120,
+    "use_central_visualizer": false,
+    "dependencies": ["Logger"]
+  },
+  "BaseTopologyManager": {
+    "link_trimmer_wait_time": 30,
+    "on-demand_connection": false,
+    "on-demand_inactive_timeout": 600,
+    "multihop": false,
+    "sec": true,
+    "timer_interval": 15,
+    "dependencies": ["Logger"]
+  },
+  "LinkManager": {
+    "dependencies": ["Logger"]
+  },
+  "AddressMapper": {
+    "ip4": "172.31.0.100",
+    "dependencies": ["Logger"]
+  },
+  "Watchdog": {
+    "timer_interval": 10,
+    "dependencies": ["Logger"]
+  },
+  "StatReport": {
+    "enabled": true,
+    "stat_server": "metrics.ipop-project.org",
+    "stat_server_port": 8080,
+    "timer_interval": 200,
+    "dependencies": ["Logger"]
+  },
+  "CentralVisualizer": {
+    "enabled": false,
+    "name": "",
+    "central_visualizer_addr": "",
+    "central_visualizer_port": 51234,
+    "dependencies": ["Logger"]
+  }
 }
 EOT
 
@@ -246,12 +261,6 @@ case "$action" in
 		;;
 
 	config)
-#		if [ -f "config/config.json" ]; then
-#			prompt overwrite_config ".*" "$MSG_CONFIG_OVERWRITE"
-#			if [ "$overwrite_config" != "y" ]; then
-#				exit 2
-#			fi
-#		fi
 		prompt vpn_type "[1-2]" "$MSG_CONFIG_CFGTYPE"
 		prompt xmpp_host "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_HOST"
 		prompt xmpp_username "[0-9a-zA-Z_.@-]+" "$MSG_CONFIG_XMPP_USERNAME"
