@@ -1,7 +1,7 @@
 #!/bin/bash
 
-CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.01_ubuntu.tar.gz
-CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.01_centos7.tar.gz
+CONTROLLER_BINARY_URL_UBUNTU=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.1_ubuntu.tar.gz
+CONTROLLER_BINARY_URL_CENTOS=https://github.com/ipop-project/Downloads/releases/download/v16.01.1/ipop-v16.01.1_centos7.tar.gz
 CONTROLLER_BINARY_NAME_UBUNTU=ipop-v16.01.1_ubuntu.tar.gz
 CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.1_centos7.tar.gz
 CONTROLLER_BINARY_MD5_UBUNTU=01097c487536e87f06fa27f15a67b171
