@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Ubuntu 15.04 URN: urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU15-04-64-STD
-
-IPOP_CONTROLLER_COMMIT="v16.01.0"
-IPOP_TINCAN_VER="v16.01.0"
+IPOP_CONTROLLER_COMMIT="v16.01.1"
+IPOP_TINCAN_VER="v16.01.1"
 
 CONF_FILE="./scale.cfg"
 NODE_PATH="./node"
@@ -75,7 +73,7 @@ while true; do
             tar xf ipop-${IPOP_TINCAN_VER}_ubuntu.tar.gz
             cp ipop-tincan ../node/ipop/
 
-            cd ..; #rm -rf tmp.sources
+            cd ..; rm -rf tmp.sources
             ;;
         ("accept")
             echo "enter 'yes' to add a node to the list of known hosts"
@@ -88,7 +86,7 @@ while true; do
             tar -zcvf node.tar.gz $NODE_PATH
             for node in ${NODES[@]}; do
                 bash -c "
-                    echo 'put node.tar.gz' | sftp $node;
+                    scp node.tar.gz $node:~/
                     ssh $node 'tar xf node.tar.gz; bash $NODE_NODE_SCRIPT install';
                 " &
             done
@@ -116,7 +114,7 @@ while true; do
         ("restart")
             ssh $SERVER "bash $NODE_NODE_SCRIPT restart-server"
             ;;
-        ("exit")
+        ("clear")
             # remove containers
             for node in ${NODES[@]}; do
                  ssh $node "bash $NODE_NODE_SCRIPT exit-containers" &
@@ -131,7 +129,7 @@ while true; do
             tar -zcvf node.tar.gz $NODE_PATH
             for node in ${NODES[@]}; do
                 bash -c "
-                    echo 'put node.tar.gz' | sftp $node;
+                    scp node.tar.gz $node:~/
                     ssh $node 'tar xf node.tar.gz; bash $NODE_NODE_SCRIPT source';
                 " &
             done
@@ -218,7 +216,7 @@ while true; do
             echo '    install                        : install/prepare resources'
             echo '    init      [size]               : initialize platform'
             echo '    restart                        : restart services'
-            echo '    exit                           : clear platform'
+            echo '    clear                          : clear platform'
             echo '    source                         : upload sources'
             echo '    config    <args>               : create IPOP config file'
             echo '    forward   <gvpn|svpn> <port>   : run forwarder in background'

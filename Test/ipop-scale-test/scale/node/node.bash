@@ -4,10 +4,6 @@ NEW_TEST=true # true=15.04 or later; false=14.10 or earlier
 
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-# determine ethernet device and host ipv4 address
-ETH_DEV=$(ifconfig | grep eth | awk '{print $1}' | head -n 1)
-HOST_IPv4=$(ifconfig $ETH_DEV | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}')
-
 # keep $min $max and $nr_vnodes persistent
 HELP_FILE="./HELP_FILE.txt"
 if [ -e $HELP_FILE ]; then
@@ -32,6 +28,7 @@ TURNSERVER_CONFIG='/etc/turnserver/turnserver.conf'
 TURNSERVER_USERS='/etc/turnserver/turnusers.txt'
 
 DEFAULT_LXC_CONFIG='/var/lib/lxc/default/config'
+DEFAULT_LXC_PACKAGES='python psmisc iperf'
 
 FORWARDER_PROGRAM="./forwarder.py"
 IPOP_PATH="./ipop"
@@ -40,17 +37,25 @@ LXC_IPOP_SCRIPT='/home/ubuntu/ipop/ipop.bash'
 case $1 in
 
     ("install")
+        ### obtain network device and ip4 address
+        NET_TEST=$(ip route get 8.8.8.8)
+        NET_DEV=$(echo $NET_TEST | awk '{print $5}')
+        NET_IP4=$(echo $NET_TEST | awk '{print $7}')
+
+        ### update and upgrade
+        sudo apt-get update
+        sudo apt-get -y upgrade
+
         ### install LXC
         # install LXC package
-        sudo apt-get update
         sudo apt-get -y install lxc
 
         # create default container
         sudo lxc-create -n default -t ubuntu
 
-        # install additional packages (python and psmisc); allow tap device
+        # install additional packages; allow tap device
         sudo chroot /var/lib/lxc/default/rootfs apt-get update
-        sudo chroot /var/lib/lxc/default/rootfs apt-get install -y python psmisc iperf
+        sudo chroot /var/lib/lxc/default/rootfs apt-get -y install $DEFAULT_LXC_PACKAGES
         echo 'lxc.cgroup.devices.allow = c 10:200 rwm' | sudo tee --append $DEFAULT_LXC_CONFIG
 
         ### install ejabberd
@@ -64,8 +69,9 @@ case $1 in
         # restart ejabberd service
         if [ $NEW_TEST == true ]; then
             sudo systemctl restart ejabberd.service
+        else
+            sudo ejabberdctl restart
         fi
-        sudo ejabberdctl restart
 
         # wait for ejabberd service to start
         sleep 15
@@ -74,15 +80,14 @@ case $1 in
         sudo ejabberdctl register admin ejabberd password
 
         ### install turnserver
-        # install libconfuse0 and turnserver packages
-        sudo apt-get update
-        sudo apt-get -y install libconfuse0 turnserver
+        # install turnserver package
+        sudo apt-get -y install turnserver
 
         # use IP aliasing to bind turnserver to this ipv4 address
-        sudo ifconfig $ETH_DEV:0 $HOST_IPv4 up
+        sudo ifconfig $NET_DEV:0 $NET_IP4 up
 
         # prepare turnserver config file
-        sudo sed -i "s/listen_address = .*/listen_address = { \"$HOST_IPv4\" }/g" $NODE_TURNSERVER_CONFIG
+        sudo sed -i "s/listen_address = .*/listen_address = { \"$NET_IP4\" }/g" $NODE_TURNSERVER_CONFIG
         sudo cp $NODE_TURNSERVER_CONFIG $TURNSERVER_CONFIG
 
         ### configure network
@@ -90,7 +95,7 @@ case $1 in
         for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="MASQUERADE" {print $1}'); do
             sudo iptables -t nat -D POSTROUTING $i
         done
-        sudo iptables -t nat -A POSTROUTING -o $ETH_DEV -j SNAT --to-source $HOST_IPv4
+        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
 
         # open TCP ports (for ejabberd)
         for i in 5222 5269 5280; do
@@ -166,21 +171,22 @@ case $1 in
         # restart ejabberd
         if [ $NEW_TEST == true ]; then
             sudo systemctl restart ejabberd.service
+        else
+            sudo ejabberdctl restart
         fi
-        sudo ejabberdctl restart
 
         # restart turnserver
         ps aux | grep -v grep | grep turnserver | awk '{print $2}' | xargs sudo kill -9
         turnserver -c $TURNSERVER_CONFIG
         ;;
-    ("exit-containers")
+    ("clear-containers")
         # stop and delete N containers
         for i in $(seq $min $max); do
             sudo lxc-stop -n "node$i"; sudo lxc-destroy -n "node$i" &
         done
         wait
         ;;
-    ("exit-server")
+    ("clear-server")
         ### exit XMPP/STUN services
         # undefine user links
         sudo ejabberdctl srg_delete ipop_vpn ejabberd
