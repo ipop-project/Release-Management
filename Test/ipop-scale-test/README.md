@@ -50,7 +50,7 @@ Open the ```List View``` tab to view the connections. Copy the connections (of t
 
 Optionally, specify the IPOP controller and tincan versions by assigning the ```CONTROLLER``` (commit/tag) and ```TINCAN``` (release version) fields in ```scale/scale.cfg```. When these fields are left unspecified, Scale-Test defaults to the latest release version.
 
-For example, the following configuration has 1 node (assuming all roles) with 20 LXCs using version 16.01.0 of the IPOP controller and tincan:
+For example, the following configuration has 1 node (assuming all roles) with 20 LXCs using version 16.01.1 of the IPOP controller and tincan:
 
 ```
 NODE       ipopuser@c220g2-010618.wisc.cloudlab.us
@@ -58,8 +58,8 @@ SERVER     ipopuser@c220g2-010618.wisc.cloudlab.us
 FORWARDER  ipopuser@c220g2-010618.wisc.cloudlab.us
 SIZE       20
 
-CONTROLLER v16.01.0
-TINCAN     v16.01.0
+CONTROLLER v16.01.1
+TINCAN     v16.01.1
 ```
 
 Run the bash script:
