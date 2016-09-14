@@ -7,7 +7,7 @@ CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.1_centos7.tar.gz
 CONTROLLER_BINARY_MD5_UBUNTU=269eaf50d9a617a3a8e962c0cf643a1a
 CONTROLLER_BINARY_MD5_CENTOS=383b1641dcb8d020eb929dd437a351e8
 
-INSTALLATION_DIR=/opt/ipop
+INSTALLATION_DIR=/opt/ipop/ipop-v16.08.0_ubuntu
 
 if [ -f /etc/debian_version ] ; then
 	is_debian=true
