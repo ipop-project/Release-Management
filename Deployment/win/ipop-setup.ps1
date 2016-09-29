@@ -101,8 +101,8 @@ function SetupTapInterface {
  } elseif ($jcfg.CFx.ip4_mask -eq 24) {
   $mask='255.255.255.0'
  }
- & netsh interface ip set address ipop static $jcfg.CFx.ip4 $mask
- & netsh interface ipv4 set subinterface ipop 'mtu=1280' 'store=persistent'
+ & netsh interface ip set address ipop static $jcfg.CFx.ip4 $mask > $null
+ & netsh interface ipv4 set subinterface ipop 'mtu=1280' 'store=persistent' > $null
  #Below doesn't work if the adapter is disconnected, Set-Net* will only update active state
  #Set-NetIPInterface -InterfaceAlias ipop -Dhcp Disabled -NlMtuBytes 1280 -PolicyStore PersistentStore
  #Remove-NetIPAddress -InterfaceAlias ipop -Confirm:$false
@@ -117,6 +117,12 @@ function InstallSleekXmpp {
   & "$pip\Scripts\pip.exe" install sleekxmpp
  }
 }
+
+#------------------------------------------------------------------------------
+function CreateFirewallRule {
+ New-NetFirewallRule -Action Allow -Description 'Allows incoming ipop-tincan' -Direction Inbound -DisplayName IPOP-VPN -Enabled True -Program "$cwd\ipop-tincan.exe" -Profile Any > $null
+}
+
 #------------------------------------------------------------------------------
 function DeleteDownloads {
  $resp=Read-Host -Prompt 'Delete downloaded setup files [y]? '
@@ -166,6 +172,7 @@ GetPython
 SetupConfig
 SetupTapInterface
 InstallSleekXmpp
+CreateFirewallRule
 DeleteDownloads
 
 'Setup completed! Run ipop-start to start IPOP'

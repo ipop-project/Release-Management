@@ -1,6 +1,6 @@
 @echo off
 set py=''
-call :CheckForPython
+call :CheckForPython  > nul 2>&1
 if ERRORLEVEL 1 (
   echo A Python 3.5 installation was not found on this system, please install it
   goto end
