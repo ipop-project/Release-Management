@@ -7,7 +7,7 @@ CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.1_centos7.tar.gz
 CONTROLLER_BINARY_MD5_UBUNTU=269eaf50d9a617a3a8e962c0cf643a1a
 CONTROLLER_BINARY_MD5_CENTOS=383b1641dcb8d020eb929dd437a351e8
 
-INSTALLATION_DIR=/opt/ipop/ipop-v16.08.0_ubuntu
+INSTALLATION_DIR=/opt/ipop/ipop-v16.08.0_ubuntu/ipop-v16.08.0_ubuntu
 
 if [ -f /etc/debian_version ] ; then
 	is_debian=true
@@ -20,16 +20,13 @@ fi
 read -r -d '' GVPN_CONF <<EOT
 {
   "CFx": {
-    "xmpp_username": "%XMPP_USERNAME%",
-    "xmpp_password": "%XMPP_PASSWORD%",
-    "xmpp_host": "%XMPP_HOST%",
-    "xmpp_port": 5222,
-    "tincan_logging": 0,
+    "tincan_logging": 2,
     "vpn_type": "GroupVPN",
+    "ip4": "%IP4%",
     "ip4_mask": 16
   },
   "Logger": {
-    "controller_logging": "ERROR"
+    "controller_logging": "DEBUG"
   },
   "TincanDispatcher": {
     "dependencies": ["Logger"]
@@ -42,8 +39,7 @@ read -r -d '' GVPN_CONF <<EOT
     "switchmode": 0,
     "dependencies": ["Logger"]
   },
-  "BaseTopologyManager": {
-    "ip4": "%IP4%",
+  "BaseTopologyManager": { 
     "sec": true,
     "multihop": false,
     "num_successors": 20,
@@ -79,6 +75,18 @@ read -r -d '' GVPN_CONF <<EOT
     "central_visualizer_addr": "",
     "central_visualizer_port": 51234,
     "dependencies": ["Logger"]
+  },
+"XmppClient": {
+    "enabled": true,
+    "xmpp_username": "%XMPP_USERNAME%",
+    "xmpp_password": "%XMPP_PASSWORD%",
+    "xmpp_host": "%XMPP_HOST%",
+    "xmpp_port": 5222,
+    "xmpp_authentication_method": "password",
+    "xmpp_accept_untrusted_server": false,
+    "truststore": "/etc/ssl/certs/ca-certificates.crt",
+    "timer_interval": 15,
+    "dependencies": ["Logger"]
   }
 }
 EOT
@@ -86,16 +94,12 @@ EOT
 read -r -d '' SVPN_CONF <<EOT
 {
   "CFx": {
-    "xmpp_username": "%XMPP_USERNAME%",
-    "xmpp_password": "%XMPP_PASSWORD%",
-    "xmpp_host": "%XMPP_HOST%",
-    "xmpp_port": 5222,
-    "tincan_logging": 0,
+    "tincan_logging": 2,
     "vpn_type": "SocialVPN",
     "ip4_mask": 24
   },
   "Logger": {
-    "controller_logging": "ERROR"
+    "controller_logging": "DEBUG"
   },
   "TincanDispatcher": {
     "dependencies": ["Logger"]
@@ -144,6 +148,18 @@ read -r -d '' SVPN_CONF <<EOT
     "name": "",
     "central_visualizer_addr": "",
     "central_visualizer_port": 51234,
+    "dependencies": ["Logger"]
+  },
+  "XmppClient": {
+    "enabled": true,
+    "xmpp_username": "%XMPP_USERNAME%",
+    "xmpp_password": "%XMPP_PASSWORD%",
+    "xmpp_host": "%XMPP_HOST%",
+    "xmpp_port": 5222,
+    "xmpp_authentication_method": "password",
+    "xmpp_accept_untrusted_server": false,
+    "truststore": "/etc/ssl/certs/ca-certificates.crt",
+    "timer_interval": 15,
     "dependencies": ["Logger"]
   }
 }
@@ -223,7 +239,7 @@ case "$action" in
 		cd "$INSTALLATION_DIR"
 
 		if [ "$is_debian" = true ]; then
-			if ! (apt-get update && apt-get install -y psmisc wget ca-certificates python tcpdump) ; then
+			if ! (apt-get update && apt-get install -y psmisc wget ca-certificates python tcpdump python-pip && pip install sleekxmpp) ; then
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
@@ -234,7 +250,7 @@ case "$action" in
 			fi
 
 		elif [ "$is_centos" = true ]; then
-			if ! (yum update && yum install -y psmisc wget ca-certificates python tcpdump) ; then
+			if ! (yum update && yum install -y psmisc wget ca-certificates python tcpdump python-pip && pip install sleekxmpp) ; then
 				echo "$MSG_INSTALL_INSTALLATION_FAILED"
 				exit 4
 			fi
@@ -299,7 +315,7 @@ case "$action" in
 		cd "$INSTALLATION_DIR"
 		[ -d log ] || mkdir log
 		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
-		python -m controller.Controller -c config/config.json &> log/log.txt &
+		python -m controllers.controller.Controller -c config/config.json &> log/log.txt &
 		echo "$MSG_START_SUCCESS"
 		exit 0
 		;;
