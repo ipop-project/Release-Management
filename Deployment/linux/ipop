@@ -7,7 +7,8 @@ CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.1_centos7.tar.gz
 CONTROLLER_BINARY_MD5_UBUNTU=269eaf50d9a617a3a8e962c0cf643a1a
 CONTROLLER_BINARY_MD5_CENTOS=383b1641dcb8d020eb929dd437a351e8
 
-INSTALLATION_DIR=/opt/ipop/ipop-v16.08.0_ubuntu/ipop-v16.08.0_ubuntu/ipop-v16.08.0_ubuntu
+INSTALLATION_DIR=/opt/ipop
+IPOP_DIR=ipop-v16.08.0_ubuntu
 CONTROLLERS_DIR=controllers
 
 if [ -f /etc/debian_version ] ; then
@@ -295,7 +296,7 @@ case "$action" in
 			CONF="$SVPN_CONF"
 		fi
 
-		cd "${INSTALLATION_DIR}"
+		cd "$INSTALLATION_DIR"/"$IPOP_DIR"
 		[ -d config ] || mkdir config
 		CONF_FILE="config/config.json"
 
@@ -311,7 +312,7 @@ case "$action" in
 
 	start)
 		force_root
-		cd "$INSTALLATION_DIR"
+		cd "$INSTALLATION_DIR"/"$IPOP_DIR"
 		[ -d log ] || mkdir log
 		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
 		cd "$CONTROLLERS_DIR"
