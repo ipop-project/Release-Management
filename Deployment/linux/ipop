@@ -7,7 +7,8 @@ CONTROLLER_BINARY_NAME_CENTOS=ipop-v16.01.1_centos7.tar.gz
 CONTROLLER_BINARY_MD5_UBUNTU=269eaf50d9a617a3a8e962c0cf643a1a
 CONTROLLER_BINARY_MD5_CENTOS=383b1641dcb8d020eb929dd437a351e8
 
-INSTALLATION_DIR=/opt/ipop/ipop-v16.08.0_ubuntu/ipop-v16.08.0_ubuntu
+INSTALLATION_DIR=/opt/ipop/ipop-v16.08.0_ubuntu/ipop-v16.08.0_ubuntu/ipop-v16.08.0_ubuntu
+CONTROLLERS_DIR=controllers
 
 if [ -f /etc/debian_version ] ; then
 	is_debian=true
@@ -84,7 +85,6 @@ read -r -d '' GVPN_CONF <<EOT
     "xmpp_port": 5222,
     "xmpp_authentication_method": "password",
     "xmpp_accept_untrusted_server": false,
-    "truststore": "/etc/ssl/certs/ca-certificates.crt",
     "timer_interval": 15,
     "dependencies": ["Logger"]
   }
@@ -158,7 +158,6 @@ read -r -d '' SVPN_CONF <<EOT
     "xmpp_port": 5222,
     "xmpp_authentication_method": "password",
     "xmpp_accept_untrusted_server": false,
-    "truststore": "/etc/ssl/certs/ca-certificates.crt",
     "timer_interval": 15,
     "dependencies": ["Logger"]
   }
@@ -315,7 +314,8 @@ case "$action" in
 		cd "$INSTALLATION_DIR"
 		[ -d log ] || mkdir log
 		sh -c './ipop-tincan 1> log/out.log 2> log/err.log &'
-		python -m controllers.controller.Controller -c config/config.json &> log/log.txt &
+		cd "$CONTROLLERS_DIR"
+		python -m controller.Controller -c ../config/config.json &> ../log/log.txt &
 		echo "$MSG_START_SUCCESS"
 		exit 0
 		;;
