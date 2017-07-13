@@ -1,133 +1,71 @@
-# Scale-Test for IPOP
+# IPOP Scale Test
+Note: Current version only tested on Ubuntu 16.04 VM
+#### Modes
+* IPOP GroupVPN test
+    * Create a separate instance of IPOP-VPN in GroupVPN Mode in each specified lxc container
+* IPOP Switch-Mode test
+   * Create instance of IPOP-VPN on host machine which is added to lxc-bridge to connect unmanaged containers to IPOP-VPN
+#### Setup for IPOP GroupVPN test
+1. Run lxcscript.sh, Enter `./scale_test.sh`
+2. When prompted for mode selection, type `group-vpn`
+3. Run `configure` (Install dependencies needed on host machine and for default container from which nodes are cloned from with the `containers-create` command)
+4. Next `containers-create` (Create and start specified number of containers, build ipop src, and copy built ipop files to each container)
+5. If visualizer option was enabled while running `containers-create` command run `visualizer-start` (Starts up two processes on host machine one running Net Visualizer found at http://localhost:8888/IPOP)
+6. Run `ipop-run`(Start up ipop processes on lxc nodes)
+#### Setup for IPOP Switch-Mode
+* The steps for setting up IPOP-VPN in scale test environment are the same as setting up the scale test for GroupVPN Mode with exception to:
+    * When prompted for mode selection, type `switch-mode`
+    * Between `configure` and `containers-create` commands run `configure-external-node`. This command will setup an instance of IPOP switch-mode on the specified host. A xmpp server address must be given which should be the ip address of the current server reachable by the external host.
+    * After ipop has been run the ipop-tap network interface must be added to the lxc bridge with `brctl addif lxcbr0 ipop_tap0`
 
-### Description
+#### Testing Environment
+*  `logs` aggregates controller and tincan logs on host machine under logs directory along with a file with information on the status of each lxc container
+* `ipop-test` begins a ipop scale testing shell to carry out connectivity and performance testing built on tools such as iperf and ping (Currently only for group-vpn testing between lxc-containers)
+#### Tear Down
+* Run `containers-del` (Destroy all lxc node labeled containers)
+* Run `visualizer-stop` (Stop visualizer processes)
 
-This project composes a set of scripts for automating the deployment and simulation of IPOP networks. Scale-Test supports both GroupVPN (using a structured peer-to-peer topology) and SocialVPN (using an unstructured, social topology),
+##### Note: ejabberd and mongodb will be installed on host machine as daemons which will start up automatically. Removal/Disabling of these services must be done manually.
 
-##### References
-
-[1] [IPOP](http://ipop-project.org/) 
-
-[2] [IPOP GitHub](https://github.com/ipop-project) 
-
-[3] [Scale-Test concept](https://github.com/ipop-project/ipop-project.github.io/wiki/Testing-Your-Build) 
-
-### Usage
-
-#### Preparing physical nodes (using CloudLab)
-
-##### Pre-defined profiles
-
-Use any of the following pre-defined profiles:
-
-```
-IPOP_SCALE_TEST_1_VIVID
-IPOP_SCALE_TEST_2_VIVID
-IPOP_SCALE_TEST_5_VIVID
-```
-
-##### Create a profile
-
-Create a profile, with at least one node and each node containing the following properties:
-
-* Node Type ```raw-pc```
-
-* Hardware Type ```c220g2```
-
-* Disk Image ```Other...``` with URN ```urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU15-04-64-STD```
-
-* Check the ```Publicly Routable IP``` option
-
-##### Create an experiment
-
-Note: ensure that the host's SSH keys are added to the CloudLab account.
-
-Instantiate this profile as to create an experiment.
-
-#### Using the automated test script
-
-Open the ```List View``` tab to view the connections. Copy the connections (of the form ```<username>@<hostname>```) into ```scale/scale.cfg``` as ```NODE```, ```SERVER```, or ```FORWARDER```. Also specify the ```SIZE``` (the number of IPOP instances)
-
-Optionally, specify the IPOP controller and tincan versions by assigning the ```CONTROLLER``` (commit/tag) and ```TINCAN``` (release version) fields in ```scale/scale.cfg```. When these fields are left unspecified, Scale-Test defaults to the latest release version.
-
-For example, the following configuration has 1 node (assuming all roles) with 20 LXCs using version 16.01.1 of the IPOP controller and tincan:
-
-```
-NODE       ipopuser@c220g2-010618.wisc.cloudlab.us
-SERVER     ipopuser@c220g2-010618.wisc.cloudlab.us
-FORWARDER  ipopuser@c220g2-010618.wisc.cloudlab.us
-SIZE       20
-
-CONTROLLER v16.01.1
-TINCAN     v16.01.1
-```
-
-Run the bash script:
-
-```bash scale/scale.bash```
-
-Enter the following commands:
-
-```
-download  # retrieves the IPOP sources specified by CONTROLLER and TINCAN or the defaults
-accept    # enter 'yes' if prompted
-install
-init
-source
-config <gvpn | svpn> [options]
-run all
-```
-
-#### Configuration
-
-The ```config``` command supports user-configurable options for generating highly customized IPOP configurations.
-
-+ For GroupVPN:
-
-	```
-	config gvpn <num_successors> <num_chords> <num_on_demand> <num_inbound> <ttl_link_initial> <ttl_link_pulse> <ttl_chord> <ttl_on_demand> <threshold_on_demand>
-	```
-
-	+ Example: ```config gvpn 2 3 2 8 60 30 180 60 128``` defines a GroupVPN topology with the follow characteristics:
-
-		+ about 2 successors
-		+ up to 3 chords
-		+ up to 2 on-demand links
-		+ about 8 in-bound links
-		+ initializing links have a time-to-live of 60 seconds before they are trimmed
-		+ established links have a time-to-live of 30 seconds before they are trimmed
-		+ chords have a time-to-live of 180 seconds before they may be replaced
-		+ on-demand links have a time-to-live of 60 seconds before they undergoes a threshold test
-		+ on-demand links have a threshold of 128 transmitted bytes per second before they are trimmed
-
-+ For SocialVPN:
-
-	```
-	config svpn
-	```
-
-	+ Example: ```config svpn``` defines a SocialVPN topology.
-
-
-#### Using the visualizer:
-
-Note: the visualizer depends on TKinter, use ```pacman -S tk``` (in Archlinux) or ```apt-get install python3-tk``` (in Ubuntu/Debian).
-
-In scale.bash:
-
-```
-forward <forwarder port>
-visualize <forwarder port> <gvpn | svpn>
-```
-
-### Other
-
-#### Using the Ubuntu 14.04 LTS
-
-By default, Scale-Test only supports Ubuntu 15.04. To use Ubuntu 14.04 LTS, modify ```scale/node/node.bash``` and set the variable ```NEW_TEST``` to ```false``` prior to deployment.
-
-A reference profile with one physical-node and 20 LXC-nodes is available: ```IPOP_SCALE_TEST_1_TRUSTY```
-
-#### Running IPOP with python3
-
-By default, IPOP instances are ran with python2. To run IPOP with python3, modify ```scale/node/ipop/ipop.bash``` and set the variable ```PYTHON``` to ```python3``` prior to deployment.
+#### Full Command List
+All commands/arguments are optional upon script call. If no command/argument is entered, required input shall be prompted. Arguments are required to be entered in the order they are listed.
+* `configure`
+    * Install dependencies required for scale-test environment. Also sets up a default lxc-container that will be base for node containers
+    * Arguments:
+        1. [is_external] - Skips installation of mongodb and ejabberd services if true. If not specified or false services will be installed
+* `configure-external-node`
+    * Install and run instance of IPOP-VPN on remote host
+    * Arguments:
+        1. [username] - username for user on remote host
+        2. [hostname] - address of remote host
+        3. [xmpp_address] - address of xmpp server
+* `containers-create`
+    * Download IPOP-VPN sources, create node containers configure IPOP-VPN for each node, and start run each container
+    * Arguments:
+        1. [container_count] - number of continaers to create and run
+        2. [controller_repo_url] - URL of Controllers Repo to clone
+        3. [tincan_repo_url] - URL of Tincan repo to clone
+        4. [visualizer] - T to enable visualizer F to disable
+        5. [is_external] - true for use on remote
+* `containers-start`
+    * Start up all defined stopped containers.
+* `containers-del`
+    * Delete all node containers. Default container is kept
+* `containers-stop`
+    * Stop all defind running containers
+* `ipop-run`
+    * In group-vpn mode runs selected nodes. In switch-mode runs IPOP-VPN on host
+    * Arguments:
+        1. [container_to_run] - Only for group-vpn mode. Enter number of node to run IPOP on or # to run IPOP on all nodes.
+* `ipop-kill`
+    * Kill IPOP processes on specified node for group-vpn or on host for switch-mode
+    * Arguments:
+        1. [container_to_kill] - Only for group-vpn mode. Enter number of node to kill IPOP on or # to kill IPOP on all nodes.
+* `ipop-tests`
+    * Run testing shell. Currently only for testing group-vpn mode
+* `logs`
+   * Gives IPOP processes status and aggregates IPOP logs under log directory on host for group-vpn mode
+* `visualizer-start`
+    * Start visualizer on host machine
+* `visualizer-stop`
+    * Stop visualizer process on host machine
