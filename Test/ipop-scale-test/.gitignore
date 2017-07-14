@@ -4,6 +4,7 @@ IPOPNetVisualizer/
 Tincan/
 Controller/
 logs/
+data/
 controller/
 ipop-config.json
 auto_config_scale.txt

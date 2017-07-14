@@ -53,9 +53,10 @@ function configure
     #Python dependencies for visualizer and ipop python tests
     sudo apt-get install -y python python-pip python-lxc
 
-    sudo pip install pymongo
+    pip install --upgrade pip
+    pip install pymongo
 
-    if [[ ( "$is_external" = true ) ]]; then
+    if [[  ! ( "$is_external" = true ) ]]; then
         #Install and start mongodb for use ipop python tests
         sudo apt-get -y install mongodb
     fi
@@ -75,7 +76,7 @@ function configure
 
     # install controller dependencies
     if [ $VPNMODE = "switch-mode" ]; then
-        sudo pip install sleekxmpp pystun psutil
+        pip install sleekxmpp pystun psutil
     else
         sudo chroot /var/lib/lxc/default/rootfs apt-get -y install 'python-pip'
         sudo chroot /var/lib/lxc/default/rootfs pip install 'sleekxmpp' pystun psutil

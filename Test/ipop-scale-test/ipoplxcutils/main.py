@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import os
+import subprocess
 import cmd
 import tempfile
 import lxc
@@ -23,22 +25,38 @@ class ScaleTestCL(cmd.Cmd):
         """
         nodes = arg.split()
         if len(nodes) == 3:
-            ping_output = ping_test(nodes[0], nodes[1], int(nodes[2]))
+            ping_output = {}
+            try:
+                ping_output = ping_test(nodes[0], nodes[1], int(nodes[2]))
+            except ValueError as err:
+                print(err)
+                return
             print(ping_output)
             parsed_ping = parse_ping(ping_output)
             document = format_ping(parsed_ping, nodes[0], nodes[1])
             self.ipopdb["ping"].insert_one(document)
         else:
-            print("Invalid arguments")
+            print("Invalid arguments. See `help ping`.")
 
     def do_pingall(self, arg):
         """Test ping between all active nodes
             e.g. pingall 5
             format: cmd (packet count)
         """
-        packet_count = int(arg)
-        results = pingall_test(packet_count)
-        self.ipopdb['ping'].insert_many(results)
+        default_packet_count = 2
+        args = arg.split()
+        if len(args) == 0:
+            print("Staring pingall with default packet count of 2.")
+            results = pingall_test(default_packet_count)
+            self.ipopdb['ping'].insert_many(results)
+        elif len(args) > 1:
+            print("Expecting only one optional argument. Type help pingall for more info.")
+        elif not str.isdigit(arg):
+            print("Packet count argument must be integer.")
+        else:
+            packet_count = int(arg)
+            results = pingall_test(packet_count)
+            self.ipopdb['ping'].insert_many(results)
 
     def do_iperf(self, arg):
         """ Iperf test:
@@ -47,20 +65,53 @@ class ScaleTestCL(cmd.Cmd):
         """
         nodes = arg.split()
         if len(nodes) == 2:
-            iperf_output = iperf_test(nodes[0], nodes[1])
+            iperf_output = {}
+            try:
+                iperf_output = iperf_test(nodes[0], nodes[1])
+            except ValueError as err:
+                print(err)
+                return
             print(iperf_output)
             document = format_iperf(iperf_output, nodes[0], nodes[1], "unicast")
             self.ipopdb["iperf"].insert_one(document)
         else:
-            print("Invalid arguments")
+            print("Invalid arguments. See `help iperf`.")
 
     def do_status(self, arg):
         """List defined containers with associated ip addreses"""
         container_status_check()
 
+    def do_exportdata(self, arg):
+        """Pulls current data from ping and iperf collections
+        and dumps then into files in data directory
+        """
+        data_directory_path = "./data"
+        if not os.path.exists(data_directory_path):
+            os.makedirs(data_directory_path)
+        subprocess.call(["mongoexport", "-d", "ipopdb", "-c", "ping",
+                         "--jsonArray", "--out", "./data/ping.json"])
+        pretty_json_file("./data/ping.json")
+        subprocess.call(["mongoexport", "--db", "ipopdb", "--collection", "iperf",
+                         "--out", "./data/iperf.json"])
+        pretty_json_file("./data/iperf.json")
+        print("files saved in {}".format(data_directory_path))
+
+
     def do_exit(self, arg):
         """Exit command-line scale testing interface"""
         return True
+
+def pretty_json_file(filepath):
+    with open(filepath, "r+") as f:
+        data = {}
+        try:
+            data = json.load(f)
+        except ValueError:
+            print("No data in {}".format(f.name))
+        f.seek(0)
+        json.dump(data, f, sort_keys=True, indent=4, separators=(',', ': '))
+        f.truncate()
+
 
 def get_ipop_ip(container):
     ips = container.get_ips()
@@ -118,12 +169,33 @@ def pingall_test(packet_count):
             for other_container in containers:
                 other_name = other_container.name
                 if other_name not in ["default", name]:
-                    ping_output = ping_test(name, other_name, packet_count)
-                    parsed_ping = parse_ping(ping_output)
-                    test_results.append(format_ping(parsed_ping, name, other_name))
-                    print("{0} -> {1} with packet loss {2}%" \
-                          .format(name, other_name,parsed_ping["packet_loss"]))
+                    test_results.append(ping_and_parse(current_container,
+                                                       name, other_name,
+                                                       packet_count))
     return test_results
+
+def ping_and_parse(sender, sender_name, receiver_name, packet_count):
+    ping_output = {}
+    try:
+        get_ipop_ip(sender)
+
+    except ValueError as err:
+        ping_output = {"error": str(err)}
+        print("{0} (ipop down) -X {1}" \
+                .format(sender_name, receiver_name))
+        return format_ping(ping_output, sender_name, receiver_name)
+
+    try:
+        ping_output = parse_ping(ping_test(sender_name, receiver_name,
+                                           packet_count))
+        print("{0} -> {1} with packet loss {2}%" \
+          .format(sender_name, receiver_name, ping_output["packet_loss"]))
+
+    except ValueError as err:
+        ping_output = {"error": str(err)}
+        print("{0} -X {1} (ipop down)" \
+                .format(sender_name, receiver_name))
+    return format_ping(ping_output, sender_name, receiver_name)
 
 def parse_ping(ping_lines):
     ping_lines = ping_lines.split('\n')
@@ -164,9 +236,10 @@ def format_iperf(iperf_output, sender, receiver, mode):
 def container_status_check():
     containers = lxc.list_containers(as_object=True)
     for container in containers:
-        status = "running" if container.running else "not running"
-        print("Container: {0} is {1} | ip addresses: {2}" \
-              .format(container.name, status, container.get_ips()))
+        if container.name != "default":
+            status = "running" if container.running else "not running"
+            print("Container: {0} is {1} | ip addresses: {2}" \
+                  .format(container.name, status, container.get_ips()))
 
 def main():
     """Peform various testing operations on scale test environment
