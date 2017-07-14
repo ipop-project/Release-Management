@@ -6,8 +6,8 @@ Note: Current version only tested on Ubuntu 16.04 VM
 * IPOP Switch-Mode test
    * Create instance of IPOP-VPN on host machine which is added to lxc-bridge to connect unmanaged containers to IPOP-VPN
 #### Setup for IPOP GroupVPN test
-1. Run lxcscript.sh, Enter `./scale_test.sh`
-2. When prompted for mode selection, type `group-vpn`
+1. Run scale test script, Enter `./scale_test.sh`
+2. When prompted for mode selection, type `classic-mode`
 3. Run `configure` (Install dependencies needed on host machine and for default container from which nodes are cloned from with the `containers-create` command)
 4. Next `containers-create` (Create and start specified number of containers, build ipop src, and copy built ipop files to each container)
 5. If visualizer option was enabled while running `containers-create` command run `visualizer-start` (Starts up two processes on host machine one running Net Visualizer found at http://localhost:8888/IPOP)
@@ -20,7 +20,7 @@ Note: Current version only tested on Ubuntu 16.04 VM
 
 #### Testing Environment
 *  `logs` aggregates controller and tincan logs on host machine under logs directory along with a file with information on the status of each lxc container
-* `ipop-test` begins a ipop scale testing shell to carry out connectivity and performance testing built on tools such as iperf and ping (Currently only for group-vpn testing between lxc-containers)
+* `ipop-test` begins a ipop scale testing shell to carry out connectivity and performance testing built on tools such as iperf and ping (Currently only for group-vpn testing between lxc-containers). Once in the interactive shell type `help` for more information about the commands available.
 #### Tear Down
 * Run `containers-del` (Destroy all lxc node labeled containers)
 * Run `visualizer-stop` (Stop visualizer processes)
