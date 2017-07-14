@@ -12,14 +12,16 @@ DEFAULT_TINCAN_REPO='https://github.com/ipop-project/Tincan'
 DEFAULT_CONTROLLERS_REPO='https://github.com/ipop-project/Controllers'
 DEFAULT_VISUALIZER_REPO='https://github.com/cstapler/IPOPNetVisualizer'
 OS_VERSION=$(lsb_release -r -s)
-VPNMODE=$(cat $HELP_FILE 2>/dev/null | grep MODE | awk '{print $2}')
-min=$(cat $HELP_FILE 2>/dev/null | grep MIN | awk '{print $2}')
-max=$(cat $HELP_FILE 2>/dev/null | grep MAX | awk '{print $2}')
-nr_vnodes=$(cat $HELP_FILE 2>/dev/null | grep NR_VNODES | awk '{print $2}')
+VPNMODE=$(grep MODE $HELP_FILE 2>/dev/null | awk '{print $2}')
+INSTALL_MONGODB=$(grep 'INSTALL MONGO' $HELP_FILE 2>/dev/null | awk '{print $3}')
+INSTALL_EJABBERD=$(grep 'INSTALL EJABBERD' $HELP_FILE 2>/dev/null | awk '{print $3}')
+XMPP_SERVER_ADDRESS=$(grep 'XMPP SERVER' $HELP_FILE 2>/dev/null | awk '{print $3}')
+min=$(grep MIN $HELP_FILE 2>/dev/null | awk '{print $2}')
+max=$(grep MAX $HELP_FILE 2>/dev/null | awk '{print $2}')
+nr_vnodes=$(grep NR_VNODES $HELP_FILE 2>/dev/null | awk '{print $2}')
 NET_TEST=$(ip route get 8.8.8.8)
 NET_DEV=$(echo $NET_TEST | awk '{print $5}')
 NET_IP4=$(echo $NET_TEST | awk '{print $7}')
-
 
 function help()
 {
@@ -48,14 +50,15 @@ function options
 function configure
 {
     # if argument is true mongodb and ejabberd won't be installed
-    is_external=$1
+    install_mongodb=$2
+    install_ejabberd=$3
 
     #Python dependencies for visualizer and ipop python tests
     sudo apt-get install -y python python-pip python-lxc
 
     sudo pip install pymongo
 
-    if [[ ( "$is_external" = true ) ]]; then
+    if [[ ( "$install_mongodb" = true ) ]]; then
         #Install and start mongodb for use ipop python tests
         sudo apt-get -y install mongodb
     fi
@@ -93,6 +96,7 @@ function configure
         sudo iptables -t nat -D POSTROUTING $i
     done
     sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
+
     # open TCP ports (for ejabberd)
     for i in 5222 5269 5280; do
         sudo iptables -A INPUT -p tcp --dport $i -j ACCEPT
@@ -102,26 +106,31 @@ function configure
     for i in 3478 19302; do
         sudo iptables -A INPUT -p udp --sport $i -j ACCEPT
         sudo iptables -A OUTPUT -p udp --sport $i -j ACCEPT
-  done
+    done
 
-    if [[ ! ( "$is_external" = true ) ]]; then
-        # Install local ejabberd server
-        sudo apt-get -y install ejabberd
-        # prepare ejabberd server config file
-        # restart ejabberd service
-        if [ $OS_VERSION = '14.04' ]; then
-            sudo cp ./config/ejabberd.cfg /etc/ejabberd/ejabberd.cfg
-            sudo ejabberdctl restart
-        else
-            sudo apt-get -y install erlang-p1-stun
-            sudo cp ./config/ejabberd.yml /etc/ejabberd/ejabberd.yml
-            sudo systemctl restart ejabberd.service
-        fi
-        # Wait for ejabberd service to start
-        sleep 15
-        # Create admin user
-        sudo ejabberdctl register admin ejabberd password
+    if [[ ! ( "$install_ejabberd" = true ) ]]; then
+        ejabberd-install
     fi
+}
+
+function ejabberd-install
+{
+    # Install local ejabberd server
+    sudo apt-get -y install ejabberd
+    # prepare ejabberd server config file
+    # restart ejabberd service
+    if [ $OS_VERSION = '14.04' ]; then
+        sudo cp ./config/ejabberd.cfg /etc/ejabberd/ejabberd.cfg
+        sudo ejabberdctl restart
+    else
+        sudo apt-get -y install erlang-p1-stun
+        sudo cp ./config/ejabberd.yml /etc/ejabberd/ejabberd.yml
+        sudo systemctl restart ejabberd.service
+    fi
+    # Wait for ejabberd service to start
+    sleep 15
+    # Create admin user
+    sudo ejabberdctl register admin ejabberd password
 }
 
 function containers-create
@@ -524,7 +533,7 @@ function logs
     fi
 }
 
-function check-vpn-mode
+function prompt-vpn-mode
 {
     if [ -z $VPNMODE ] ; then
         echo -e "Select vpn mode to test:\nclassic-mode or switch-mode"
@@ -532,6 +541,23 @@ function check-vpn-mode
         echo "MODE $VPNMODE" >> $HELP_FILE
     fi
 }
+
+function prompt-mongodb-installation
+{
+    if [ -z $INSTALL_MONGODB ]; then
+        read -p "Install mongodb on this host?(Y/N):" INSTALL_MONGODB
+        echo "INSTALL MONGO $INSTALL_MONGODB" >> $HELP_FILE
+    fi
+}
+
+function prompt-ejabberd-installation
+{
+    if [ -z $INSTALL_EJABBERD ]; then
+        read -p "Install ejabbed on this host?(Y/N): " INSTALL_EJABBERD
+        echo "INSTALL EJABBERD $INSTALL_EJABBERD" >> $HELP_FILE
+    fi
+}
+
 
 function configure-external-node
 {
@@ -553,12 +579,40 @@ function configure-external-node
     ssh "$username@$hostname" -t "sudo ./external_setup.sh $xmpp_address"
 }
 
+function show-host-ips
+{
+    ips=$(hostname -I | tr " " "\n" | sort -u)
+    index=1
+    echo "Current Hosts IP Addresses:"
+    for ip in $ips; do
+        echo "   ${index}) $ip"
+        let index=${index}+1
+    done
+
+}
+
+function prompt-xmpp-server-address
+{
+    if [ -z $XMPP_SERVER_ADDRESS ]; then
+        echo "Example server addresses:"
+        echo "   jabber.theforest.us"
+        echo "   ipop_test_xmpp.org"
+        show-host-ips
+        echo "Enter XMPP Server Address:"
+        read -p "> " $XMPP_SERVER_ADDRESS
+        echo "XMPP SERVER $XMPP_SERVER_ADDRESS" >> $HELP_FILE
+    fi
+}
+
 function ipop-tests
 {
     sudo python ipoplxcutils/main.py
 }
 
-check-vpn-mode
+prompt-vpn-mode
+prompt-ejabberd-installation
+prompt-mongodb-installation
+prompt-xmpp-server-address
 $@
 
 if [[ -z $@ ]] ; then
