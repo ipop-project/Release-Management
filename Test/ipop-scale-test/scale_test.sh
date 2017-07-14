@@ -49,16 +49,12 @@ function options
 
 function configure
 {
-    # if argument is true mongodb and ejabberd won't be installed
-    install_mongodb=$2
-    install_ejabberd=$3
-
     #Python dependencies for visualizer and ipop python tests
     sudo apt-get install -y python python-pip python-lxc
 
     sudo pip install pymongo
 
-    if [[ ( "$install_mongodb" = true ) ]]; then
+    if [[ ( "$INSTALL_MONGODB" = true ) ]]; then
         #Install and start mongodb for use ipop python tests
         sudo apt-get -y install mongodb
     fi
@@ -108,7 +104,7 @@ function configure
         sudo iptables -A OUTPUT -p udp --sport $i -j ACCEPT
     done
 
-    if [[ ! ( "$install_ejabberd" = true ) ]]; then
+    if [[ ! ( "$INSTALL_EJABBERD" = true ) ]]; then
         ejabberd-install
     fi
 }
@@ -135,14 +131,14 @@ function ejabberd-install
 
 function containers-create
 {
-    # obtain network device and ip4 address
+    ##### obtain network device and ip4 address
     NET_TEST=$(ip route get 8.8.8.8)
     NET_DEV=$(echo $NET_TEST | awk '{print $5}')
     NET_IP4=$(echo $NET_TEST | awk '{print $7}')
 
     MODELINE=$(cat $HELP_FILE | grep MODE)
 
-    # function parameters
+    #### function parameters
     container_count=$1
     controller_repo_url_arg=$2
     tincan_repo_url_arg=$3
@@ -375,8 +371,8 @@ function ipop-run
     if [ $VPNMODE = "switch-mode" ]; then
         echo "Running ipop in switchmode"
         sudo chmod 0666 /dev/net/tun
-        nohup sudo -b ./ipop-tincan &> logs/ctrl.log
-        nohup sudo -b python -m controller.Controller -c ./ipop-config.json &> logs/tincan.log
+        nohup sudo -b ./ipop-tincan &> logs/tincan.log
+        nohup sudo -b python -m controller.Controller -c ./ipop-config.json &> logs/ctrl.log
     else
         if [[ ! ( -z "$container_to_run" ) ]]; then
             if [ "$container_to_run" = '#' ]; then
@@ -563,7 +559,6 @@ function configure-external-node
 {
     username=$1
     hostname=$2
-    xmpp_address=$3
 
     if [ -z "$username" ]; then
         read -p "Enter username: " username
@@ -571,12 +566,9 @@ function configure-external-node
     if [ -z "$hostname" ]; then
         read -p "Enter hostname: " hostname
     fi
-    if [ -z "$xmpp_address" ]; then
-        read -p "Enter xmpp server address: " xmpp_address
-    fi
 
     scp ./external/external_setup.sh $username@$hostname:
-    ssh "$username@$hostname" -t "sudo ./external_setup.sh $xmpp_address"
+    ssh "$username@$hostname" -t "sudo ./external_setup.sh $XMPP_SERVER_ADDRESS"
 }
 
 function show-host-ips
@@ -599,7 +591,7 @@ function prompt-xmpp-server-address
         echo "   ipop_test_xmpp.org"
         show-host-ips
         echo "Enter XMPP Server Address:"
-        read -p "> " $XMPP_SERVER_ADDRESS
+        read -p "> " XMPP_SERVER_ADDRESS
         echo "XMPP SERVER $XMPP_SERVER_ADDRESS" >> $HELP_FILE
     fi
 }
