@@ -9,7 +9,7 @@ Note: Current version only tested on Ubuntu 16.04 VM
 1. Run scale test script, Enter `./scale_test.sh`
 2. When prompted for mode selection, type `classic-mode`
 3. Run `configure` (Install dependencies needed on host machine and for default container from which nodes are cloned from with the `containers-create` command)
-4. Next `containers-create` (Create and start specified number of containers, build ipop src, and copy built ipop files to each container)
+4. Next `containers-create` (Create and start specified number of containers, build ipop src, choose ipop topology configuration and copy built ipop files to each container)
 5. If visualizer option was enabled while running `containers-create` command run `visualizer-start` (Starts up two processes on host machine one running Net Visualizer found at http://localhost:8888/IPOP)
 6. Run `ipop-run`(Start up ipop processes on lxc nodes)
 #### Setup for IPOP Switch-Mode

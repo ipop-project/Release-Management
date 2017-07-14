@@ -253,7 +253,7 @@ function containers-create
         read user_input
 
         if [ $user_input = 'Y' ]; then
-            topology_param="1 1 0 3"
+            topology_param="4 4 0 4"
         else
             topology_param=""
             echo -e "\e[1;31m Enter No of Successor Links: \e[0m"
@@ -365,36 +365,41 @@ function ipop-run
 
     if [ $VPNMODE = "switch-mode" ]; then
         echo "Running ipop in switchmode"
+        sudo chmod 0666 /dev/net/tun
         nohup sudo -b ./ipop-tincan &> logs/ctrl.log
         nohup sudo -b python -m controller.Controller -c ./ipop-config.json &> logs/tincan.log
     else
-      if [ -y "$container_to_run" ]; then
-        if [ "$container_to_run" = '#' ]; then
-            for i in $(seq $min $max); do
-                echo "Running node$i"
-                sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-                sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
-            done
+        if [[ ! ( -z "$container_to_run" ) ]]; then
+            if [ "$container_to_run" = '#' ]; then
+                for i in $(seq $min $max); do
+                    echo "Running node$i"
+                    sudo lxc-attach -n "node$i" -- bash -c 'sudo chmod 0666 /dev/net/tun'
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+                done
+            else
+                echo "Running node$container_to_run"
+                sudo lxc-attach -n "node$container_to_run" -- bash -c 'sudo chmod 0666 /dev/net/tun'
+                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
+                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+            fi
         else
-            echo "Running node$container_to_run"
-            sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-            sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+            echo -e "\e[1;31mEnter # To RUN all containers or Enter the container number.  (e.g. Enter 1 to start node1)\e[0m"
+            read user_input
+            if [ $user_input = '#' ]; then
+                for i in $(seq $min $max); do
+                    echo "Running node$i"
+                    sudo lxc-attach -n "node$i" -- bash -c 'sudo chmod 0666 /dev/net/tun'
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+                done
+            else
+                echo "Running node$user_input"
+                sudo lxc-attach -n "node$user_input" -- bash -c 'sudo chmod 0666 /dev/net/tun'
+                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
+                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+            fi
         fi
-      else
-        echo -e "\e[1;31mEnter # To RUN all containers or Enter the container number.  (e.g. Enter 1 to start node1)\e[0m"
-        read user_input
-        if [ $user_input = '#' ]; then
-            for i in $(seq $min $max); do
-                echo "Running node$i"
-                sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-                sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
-            done
-        else
-            echo "Running node$user_input"
-            sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-            sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
-        fi
-      fi
     fi
 }
 
@@ -405,8 +410,8 @@ function ipop-kill
     if [ $VPNMODE = "switch-mode" ]; then
         sudo ./node/node_config.sh kill
     else
-      if [ -z "$container_to_kill" ]; then
-          if [ $container_to_kill = '#' ]; then
+        if [[ ! ( -z "$container_to_kill" ) ]]; then
+          if [ "$container_to_kill" = '#' ]; then
             for i in $(seq $min $max); do
                 sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh kill"
             done
