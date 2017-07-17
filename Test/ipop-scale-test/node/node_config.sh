@@ -23,6 +23,9 @@ case $1 in
         BaseTopologyManager_num_chords=$7
         BaseTopologyManager_num_on_demand=$8
         BaseTopologyManager_num_inbound=$9
+        turn_host=$10
+        turn_user=$11
+        turn_password=$12
         echo -e \
             "{"\
                 "\n  \"CFx\": {"\
@@ -43,9 +46,9 @@ case $1 in
                 "\n     }],"\
 		"\n     \"Stun\": [\"stun.l.google.com:19302\"],"\
                 "\n     \"Turn\": [{"\
-                "\n        \"Address\": \"***REMOVED***:19302\","\
-                "\n        \"User\": \"***REMOVED***\","\
-                "\n        \"Password\": \"***REMOVED***\""\
+                "\n        \"Address\": \"$turn_host:19302\","\
+                "\n        \"User\": \"$turn_user\","\
+                "\n        \"Password\": \"$turn_password\""\
                 "\n     }]"\
                 "\n  },"\
                 "\n  \"XmppClient\": {"\
