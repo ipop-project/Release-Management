@@ -23,9 +23,9 @@ case $1 in
         BaseTopologyManager_num_chords=$7
         BaseTopologyManager_num_on_demand=$8
         BaseTopologyManager_num_inbound=$9
-        turn_host=$10
-        turn_user=$11
-        turn_password=$12
+        turn_host=$serv_addr
+        turn_user=$10
+        turn_password=$11
         echo -e \
             "{"\
                 "\n  \"CFx\": {"\

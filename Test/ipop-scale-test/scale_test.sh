@@ -19,7 +19,9 @@ nr_vnodes=$(cat $HELP_FILE 2>/dev/null | grep NR_VNODES | awk '{print $2}')
 NET_TEST=$(ip route get 8.8.8.8)
 NET_DEV=$(echo $NET_TEST | awk '{print $5}')
 NET_IP4=$(echo $NET_TEST | awk '{print $7}')
-
+TURN_USERS="/etc/turnserver/turnusers.txt"
+TURN_ROOT_CONFIG="/etc/turnserver/turnserver.conf"
+TURN_CONFIG="./config/turnserver.conf"
 
 function help()
 {
@@ -83,12 +85,20 @@ function configure
     fi
 
     echo 'lxc.cgroup.devices.allow = c 10:200 rwm' | sudo tee --append $DEFAULT_LXC_CONFIG
-    # use IP aliasing to bind turnserver to this ipv4 address
-    sudo ifconfig $NET_DEV:0 $NET_IP4 up
-    # prepare turnserver config file
-    sudo sed -i "s/listen_address = .*/listen_address = { \"$NET_IP4\" }/g" $NODE_TURNSERVER_CONFIG
-    sudo cp $NODE_TURNSERVER_CONFIG $TURNSERVER_CONFIG
-    ### configure network
+
+    if [[ ! ( "$is_external" = true ) ]]; then
+        # Install turnserver
+        sudo apt-get install -y libconfuse0 turnserver
+        echo "containeruser:password:ipopvpn.org:authorized" | sudo tee --append $TURN_USERS
+        # use IP aliasing to bind turnserver to this ipv4 address
+        sudo ifconfig $NET_DEV:0 $NET_IP4 up
+        # prepare turnserver config file
+        sudo cp $TURN_CONFIG $TURN_ROOT_CONFIG
+        sudo sed -i "s/listen_address = .*/listen_address = { \"$NET_IP4\" }/g" $TURN_ROOT_CONFIG
+        turnserver -c $TURN_ROOT_CONFIG
+    fi
+
+        ### configure network
     # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
     for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="MASQUERADE" {print $1}'); do
         sudo iptables -t nat -D POSTROUTING $i
@@ -103,7 +113,7 @@ function configure
     for i in 3478 19302; do
         sudo iptables -A INPUT -p udp --sport $i -j ACCEPT
         sudo iptables -A OUTPUT -p udp --sport $i -j ACCEPT
-  done
+    done
 
     if [[ ! ( "$is_external" = true ) ]]; then
         # Install local ejabberd server
@@ -310,7 +320,7 @@ function containers-create
             sudo cp ./ipop-tincan "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo cp './node/node_config.sh' "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo lxc-attach -n node$i -- bash -c "sudo chmod +x $IPOP_TINCAN; sudo chmod +x $IPOP_HOME/node_config.sh;"
-            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param"
+            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param containeruser password"
             echo "Container node$i started."
             sudo ejabberdctl register "node$i" ejabberd password
             for j in $(seq $min $max); do
