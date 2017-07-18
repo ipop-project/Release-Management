@@ -34,8 +34,10 @@ function help()
     ipop-run                       : to run IPOP node
     ipop-kill                      : to kill IPOP node
     ipop-tests                     : open scale test shell to test ipop
+    ipop-status                    : show statuses of IPOP processes
     visualizer-start               : install and start up visualizer
-    visualizer-stop                : stop all visualizer related processes
+    visualizer-stop                : stop visualizer processes
+    visualizer-status              : show statuses of visualizer processes
     logs                           : aggregate ipop logs under ./logs
     '
 }
@@ -98,12 +100,18 @@ function configure
         turnserver -c $TURN_ROOT_CONFIG
     fi
 
+    read -p "Replace symmetric NATS with full-cone NATS? (Y/n) " REPLACE_NAT
+
+    if [[ $REPLACE_NAT =~ [Yy](es)* ]]; then
+        echo "Replacing symmetric NATS"
         ### configure network
-    # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
-    for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="MASQUERADE" {print $1}'); do
-        sudo iptables -t nat -D POSTROUTING $i
-    done
-    sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
+        # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
+        for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="MASQUERADE" {print $1}'); do
+            sudo iptables -t nat -D POSTROUTING $i
+        done
+        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
+    fi
+
     # open TCP ports (for ejabberd)
     for i in 5222 5269 5280; do
         sudo iptables -A INPUT -p tcp --dport $i -j ACCEPT
@@ -152,8 +160,7 @@ function containers-create
     is_external=$5
 
     if [ -z "$container_count" ]; then
-        echo -e "No of containers to be created::"
-        read max
+        read -p "No of containers to be created: " max
         min=1
         echo -e "MIN $min\nMAX $max\nNR_VNODES $max" > $HELP_FILE
         echo $MODELINE >> $HELP_FILE
@@ -165,19 +172,19 @@ function containers-create
     fi
 
     if [ -z "$controller_repo_url_arg" ]; then
-        echo "Downloading executable and code"
         # Check if IPOP controller executables already exists
         if [ -e $CONTROLLER ]; then
-            echo "Controller modules already present in the current path.Do you want to continue with container creation (T/F).."
+            echo -e "\e[1;31mControllers repo already present in the current path. Continue with existing repo? (Y/N) \e[0m"
             read user_input
-            if [ $user_input = 'F' ]; then
-                echo -e "\e[1;31mEnter IPOP Controller github URL(default: $DEFAULT_CONTROLLERS_REPO) \e[0m"
+            if [[ "$user_input" =~ [Nn](o)* ]]; then
+                rm -rf $CONTROLLER
+                echo -e "\e[1;31mEnter IPOP Controller github URL(default: $DEFAULT_CONTROLLERS_REPO)\e[0m"
                 read githuburl_ctrl
                 if [ -z "$githuburl_ctrl" ]; then
                     githuburl_ctrl=$DEFAULT_CONTROLLERS_REPO
                 fi
                 git clone $githuburl_ctrl
-                echo -e "Do you want to continue using master branch(Y/N):"
+                echo -e "\e[1;31mDo you want to continue using master branch? (Y/N):\e[0m"
                 read user_input
                 if [ $user_input = 'N' ]; then
                     echo -e "Enter git repo branch name:"
@@ -188,15 +195,15 @@ function containers-create
                 fi
             fi
         else
-            echo -e "\e[1;31mEnter IPOP Controller github URL(default: $DEFAULT_CONTROLLERS_REPO) \e[0m"
+            echo -e "\e[1;31mEnter IPOP Controller github URL(default: $DEFAULT_CONTROLLERS_REPO)\e[0m"
             read githuburl_ctrl
             if [ -z "$githuburl_ctrl" ]; then
                 githuburl_ctrl=$DEFAULT_CONTROLLERS_REPO
             fi
             git clone $githuburl_ctrl
-            echo -e "Do you want to continue using master branch(Y/N):"
+            echo -e "\e[1;31mDo you want to continue using master branch? (Y/N):\e[0m"
             read user_input
-            if [ $user_input = 'N' ]; then
+            if [[ "$user_input" =~ [Nn](o)* ]]; then
                 echo -e "Enter git repo branch name:"
                 read github_branch
                 cd Controllers
@@ -211,9 +218,8 @@ function containers-create
     if [ -z "$tincan_repo_url_arg" ]; then
         # Check whether Tincan executables exists in the current path
         if [ -e $TINCAN ]; then
-            echo "Tincan binary present, aborting build script execution!!!"
+            echo "Tincan binary present, skipping build script execution."
         else
-            echo "***************Building Tincan binary***************"
             echo -e "\e[1;31mEnter github URL for Tincan (default: $DEFAULT_TINCAN_REPO) \e[0m"
             read github_tincan
             if [ -z "$github_tincan" ] ; then
@@ -221,9 +227,9 @@ function containers-create
             fi
 
             git clone $github_tincan
-            echo -e "Do you want to continue using master branch(Y/N):"
+            echo -e "\e[1;31mDo you want to continue using master branch? (Y/N):\e[0m"
             read user_input
-            if [ $user_input = 'N' ]; then
+            if [[ "$user_input" =~ [Nn](o)* ]]; then
                 echo -e "Enter git repo branch name:"
                 read github_branch
                 cd Tincan
@@ -231,9 +237,11 @@ function containers-create
                 cd ..
             fi
             cd ./Tincan/trunk/build/
+            echo "Building Tincan binary"
             make
             cd ../../..
             cp ./Tincan/trunk/out/release/x64/ipop-tincan .
+            sudo rm -r Tincan
         fi
     else
         git clone $tincan_repo_url_arg
@@ -241,50 +249,50 @@ function containers-create
         make
         cd ../../..
         cp ./Tincan/trunk/out/release/x64/ipop-tincan .
+        sudo rm -r Tincan
     fi
 
     if [ -z "$visualizer_arg" ]; then
-        echo -e "\e[1;31mEnable Visulaization (T/F): \e[0m"
+        echo -e "\e[1;31mEnable visualization? (Y/N): \e[0m"
         read visualizer
-        if [ $visualizer = 'T' ]; then
+        if [[ "$visualizer" =~ [Yy](es)* ]]; then
             isvisual=true
         else
             isvisual=false
         fi
     else
-        if [ "$visualizer_arg" = 'T' ]; then
+        if [[ "$visualizer_arg" =~ [Yy](es)* ]]; then
             isvisual=true
         else
             isvisual=false
         fi
     fi
 
+    topology_param="4 4 0 4"
     if [[ ! ( "$is_external" = true ) ]]; then
-        echo -e "\e[1;31Do you want to set default IPOP network configuration(Y/N): \e[0m"
+        echo "Network defaults:"
+        echo "No of Successor links: 4"
+        echo "Max No of Chords: 4"
+        echo "Max No of Ondemand links: 0"
+        echo "Max No of Inbound links: 4"
+        echo -e "\e[1;31mDo you want to use IPOP network defaults? (Y/N): \e[0m"
         read user_input
-
-        if [ $user_input = 'Y' ]; then
-            topology_param="4 4 0 4"
-        else
+        if [[ $user_input =~ [Nn](o)* ]]; then
             topology_param=""
-            echo -e "\e[1;31m Enter No of Successor Links: \e[0m"
+            echo -e "\e[1;31mEnter No of Successor Links: \e[0m"
             read user_input
             topology_param="$topology_param $user_input"
-            echo -e "\e[1;31m Enter Max No of Chords Links: \e[0m"
+            echo -e "\e[1;31mEnter Max No of Chords Links: \e[0m"
             read user_input
             topology_param="$topology_param $user_input"
-            echo -e "\e[1;31m Enter Max No of Ondemand Links: \e[0m"
+            echo -e "\e[1;31mEnter Max No of Ondemand Links: \e[0m"
             read user_input
             topology_param="$topology_param $user_input"
-            echo -e "\e[1;31m Enter Max No of Inbound Links: \e[0m"
+            echo -e "\e[1;31mEnter Max No of Inbound Links: \e[0m"
             read user_input
             topology_param="$topology_param $user_input"
         fi
-    else
-       topology_param="1 0 0 3"
     fi
-
-    echo "VPN MODE: $VPNMODE"
 
     if [[ "$VPNMODE" = "switch-mode" ]]; then
         sudo mkdir -p /dev/net
@@ -296,10 +304,10 @@ function containers-create
         sudo cp -r ./Controllers/controller/ ./
 
         if [[ ! ( "$is_external" = true ) ]]; then
-            sudo ./node/node_config.sh config 1 GroupVPN $NET_IP4 $isvisual $topology_param
+            sudo ./node/node_config.sh config 1 GroupVPN $NET_IP4 $isvisual $topology_param containeruser password
             sudo ejabberdctl register "node1" ejabberd password
         else
-            sudo ./node/node_config.sh config 2 GroupVPN $NET_IP4 $isvisual $topology_param
+            sudo ./node/node_config.sh config 2 GroupVPN $NET_IP4 $isvisual $topology_param containeruser password
             sudo ejabberdctl register "node2" ejabberd password
         fi
 
@@ -331,12 +339,11 @@ function containers-create
         done
     fi
     sudo rm -r Controllers
-    sudo rm -r Tincan
 }
 
 function containers-start
 {
-    echo -e "\e[1;31mStarting containers.... \e[0m"
+    echo -e "\e[1;31mStarting containers. \e[0m"
     for i in $(seq $min $max); do
         sudo bash -c "sudo lxc-start -n node$i --daemon;"
         echo "Container node$i started."
@@ -345,7 +352,7 @@ function containers-start
 
 function containers-del
 {
-    echo -e "\e[1;31mContainer deletion inprogress .... \e[0m"
+    echo -e "\e[1;31mContainer deletion in progress. \e[0m"
     for i in $(seq $min $max); do
         if [ $VPNMODE = "classic-mode" ]; then
             for j in $(seq $min $max); do
@@ -362,7 +369,7 @@ function containers-del
 
 function containers-stop
 {
-    echo -e "\e[1;31mStopping container... \e[0m"
+    echo -e "\e[1;31mStopping containers. \e[0m"
     for i in $(seq $min $max); do
         sudo lxc-stop -n "node$i"
     done
@@ -372,11 +379,10 @@ function ipop-run
 {
    container_to_run=$1
 
-    mkdir -p logs/
-
     if [ $VPNMODE = "switch-mode" ]; then
-        echo "Running ipop in switchmode"
+        echo "Running ipop in switch-mode"
         sudo chmod 0666 /dev/net/tun
+        mkdir -p logs/
         nohup sudo -b ./ipop-tincan &> logs/ctrl.log
         nohup sudo -b python -m controller.Controller -c ./ipop-config.json &> logs/tincan.log
     else
@@ -385,14 +391,14 @@ function ipop-run
                 for i in $(seq $min $max); do
                     echo "Running node$i"
                     sudo lxc-attach -n "node$i" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'ulimit -c unlimted && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
                 done
             else
                 echo "Running node$container_to_run"
                 sudo lxc-attach -n "node$container_to_run" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'ulimit -c unlimted && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
+                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
             fi
         else
             echo -e "\e[1;31mEnter # To RUN all containers or Enter the container number.  (e.g. Enter 1 to start node1)\e[0m"
@@ -401,14 +407,14 @@ function ipop-run
                 for i in $(seq $min $max); do
                     echo "Running node$i"
                     sudo lxc-attach -n "node$i" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'ulimit -c unlimited && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
+                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
                 done
             else
                 echo "Running node$user_input"
                 sudo lxc-attach -n "node$user_input" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && ./ipop-tincan &'
-                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &'
+                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'ulimit -c unlimited && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
+                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
             fi
         fi
     fi
@@ -452,9 +458,10 @@ function visualizer-start
     fi
     git clone $githuburl_visualizer
     cd IPOPNetVisualizer
-    echo -e "Do you want to continue using master branch(Y/N):"
+
+    echo -e "\e[1;31mDo you want to continue using master branch(Y/N):\e[0m"
     read user_input
-    if [ $user_input = 'N' ]; then
+    if [[ $user_input =~ [Nn](o)* ]]; then
        echo -e "Enter git repo branch name:"
        read github_branch
        git checkout $github_branch
@@ -477,54 +484,8 @@ function visualizer-stop
     rm -rf ./IPOPNetVisualizer
 }
 
-function logs
+function visualizer-status
 {
-    if [ $VPNMODE = "classic-mode" ]; then
-        controller_log='/home/ubuntu/ipop/logs/ctrl.log'
-        tincan_log='/home/ubuntu/ipop/logs/tincan.log_0'
-        for i in $(seq $min $max); do
-               mkdir -p logs/"node$i"
-               sudo lxc-info -n "node$i" > logs/"node$i"/container_status.txt
-               container_status=$(sudo lxc-ls --fancy | grep "node$i" | awk '{ print $2 }')
-
-               if [ "$container_status" = 'RUNNING' ] ; then
-                    ctrl_process_status=$(sudo lxc-attach -n "node$i" -- bash -c 'ps aux | grep "[c]ontroller.Controller"')
-                    tin_process_status=$(sudo lxc-attach -n "node$i" -- bash -c 'ps aux | grep "[i]pop-tincan"')
-                    ctrl_log_status=$(sudo lxc-attach -n "node$i" -- bash -c "[ -f $controller_log ] && echo 'FOUND' || echo 'NOT FOUND'")
-                    tin_log_status=$(sudo lxc-attach -n "node$i" -- bash -c "[ -f $tincan_log ] && echo 'FOUND' || echo 'NOT FOUND'")
-
-                    if [ -n "$ctrl_process_status" ]; then
-                            echo "Controller is UP on node$i"
-                    else
-                            echo "Controller is DOWN on node$i"
-                    fi
-
-                    if [ -n "$tin_process_status" ]; then
-                            echo "Tincan is UP on node$i"
-                    else
-                            echo "Tincan is DOWN on node$i"
-                    fi
-
-                    if [ "$ctrl_log_status" = 'FOUND' ] ; then
-                            echo "Captured node$i controller log "
-                            sudo lxc-attach -n "node$i" -- bash -c "cat $controller_log" > logs/"node$i"/ctrl.log
-                    else
-                            echo 'Controller log file not found'
-                    fi
-
-                    if [ "$tin_log_status" = 'FOUND' ] ; then
-                            echo "Captured node$i tincan log "
-                            sudo lxc-attach -n "node$i" -- bash -c "cat $tincan_log" > logs/"node$i"/tincan.log
-                    else
-                            echo "Tincan log file for node$i not found"
-                    fi
-               else
-                    echo -e "node$i is not running"
-               fi
-        done
-    fi
-
-    echo -e "View $(pwd)/logs/ to see ctrl and tincan logs"
     visualizer_aggr=$(ps aux | grep "[a]ggr")
     visualizer_cent=$(ps aux | grep "[c]entVis")
 
@@ -533,6 +494,58 @@ function logs
     else
            echo 'Visualizer is Down'
     fi
+}
+
+function ipop-status
+{
+    for i in $(seq $min $max); do
+        container_status=$(sudo lxc-ls --fancy | grep "node$i" | awk '{ print $2 }')
+        if [ "$container_status" = 'RUNNING' ] ; then
+            ctrl_process_status=$(sudo lxc-attach -n "node$i" -- bash -c 'ps aux | grep "[c]ontroller.Controller"')
+            tin_process_status=$(sudo lxc-attach -n "node$i" -- bash -c 'ps aux | grep "[i]pop-tincan"')
+
+            if [ -n "$ctrl_process_status" ]; then
+                    ctrl_real_status="Controller is UP"
+            else
+                    ctrl_real_status="Controller is DOWN"
+            fi
+
+            if [ -n "$tin_process_status" ]; then
+                    echo "$ctrl_real_status && Tincan is UP on node$i"
+            else
+                    echo "$ctrl_real_status && Tincan is DOWN on node$i"
+            fi
+
+        else
+                echo -e "node$i is not running"
+        fi
+    done
+}
+
+
+function logs
+{
+    if [ $VPNMODE = "classic-mode" ]; then
+        for i in $(seq $min $max); do
+               mkdir -p logs/"node$i"
+               sudo lxc-info -n "node$i" > logs/"node$i"/container_status.txt
+               container_status=$(sudo lxc-ls --fancy | grep "node$i" | awk '{ print $2 }')
+                node_rootfs="/var/lib/lxc/node$i/rootfs"
+                node_logs="$node_rootfs/home/ubuntu/ipop/logs/."
+                core_file="$node_rootfs/home/ubuntu/ipop/core"
+
+               if [ -e $core_file ] ; then
+                   sudo cp $core_file ".logs/node$i"
+               fi
+
+               if [ "$container_status" = 'RUNNING' ] ; then
+                   sudo cp -r $node_logs "./logs/node$i"
+               else
+                    echo "node$i is not running"
+               fi
+        done
+    fi
+    echo "View ./logs/ to see ctrl and tincan logs"
 }
 
 function check-vpn-mode
@@ -597,6 +610,9 @@ if [[ -z $@ ]] ; then
         ("ipop-kill")
             ipop-kill
         ;;
+        ("ipop-status")
+            ipop-status
+        ;;
         ("quit")
             exit 0
         ;;
@@ -606,6 +622,8 @@ if [[ -z $@ ]] ; then
         ("visualizer-stop")
             visualizer-stop
         ;;
+        ("visualizer-status")
+            visulizer-status
         ("ipop-tests")
             ipop-tests
         ;;
