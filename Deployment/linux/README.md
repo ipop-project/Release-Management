@@ -54,6 +54,10 @@ Execute IPOP which is `ipop` executable script right in the installation directo
 
     ./ipop stop
 
+**Remove IPOP:**
+
+    ./ipop remove
+
 ## Log Files
 
 If anything went wrong while using IPOP, the log files are located at `/opt/ipop/log`.
@@ -65,3 +69,4 @@ See the [configuration page](https://github.com/ipop-project/ipop-project.github
 
 ## Manual Installation
 If you need to perform a manual installation of IPOP-VPN, detailed instructions are available on the [Manual Installation Page | Manual Install on Linux](https://github.com/ipop-project/ipop-project.github.io/wiki/Manual-Install-on-Linux).
+
