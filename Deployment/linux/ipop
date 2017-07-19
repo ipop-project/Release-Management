@@ -190,6 +190,7 @@ Enter [y|N]: "
 MSG_CONFIG_CONFIGURED_SUCCESSFULLY="Configured Successfully"
 MSG_START_SUCCESS="Started"
 MSG_STOP_SUCCESS="Stopped"
+MSG_REMOVE_SUCCESS="Removed"
 MSG_UNSUPPORTED_OS="Unsupported Operating System - IPOP currently works on CentOS and Debian based Linux distributions such as Debian, Ubuntu, Mint, and Raspbian."
 
 function prompt(){
@@ -321,6 +322,7 @@ case "$action" in
 		exit 0
 		;;
 
+# TODO: Make sure it has really stopped.
 	stop)
 		force_root
 		ps aux | grep -v grep | grep ipop-tincan | awk '{print $2}' | xargs sudo kill -9
@@ -329,12 +331,22 @@ case "$action" in
 		exit 0
 		;;
 
+# TODO: Make sure it has really stopped.
+  remove)
+    force_root
+    ps aux | grep -v grep | grep ipop-tincan | awk '{print $2}' | xargs sudo kill -9
+    ps aux | grep -v grep | grep controller.Controller | awk '{print $2}' | xargs sudo kill -9
+    rm -rf "$INSTALLATION_DIR"
+    echo "$MSG_REMOVE_SUCCESS"
+    exit 0
+    ;;
+
 #	status)
 #		tcpdump -ni lo udp port 5800 -A -t -c 2
 #		;;
 
 	*)
-		echo "Usage: $SCRIPTNAME {install|config|start|stop}" >&2
+		echo "Usage: $SCRIPTNAME {install|config|start|stop|remove}" >&2
 		exit 3
 		;;
 esac
