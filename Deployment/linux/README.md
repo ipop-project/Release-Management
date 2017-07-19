@@ -20,7 +20,7 @@ If the 'wget' package is not installed, you will need to install it:
 
 To start the IPOP Installer, run the following command:
 
-    wget -O - https://raw.githubusercontent.com/ipop-project/Release-Management/v16.08.0/Deployment/linux/installer | /bin/bash
+    wget -O - https://raw.githubusercontent.com/vahid-dan/Release-Management/master/Deployment/linux/installer | /bin/bash
 
 The default installation directory will be `/opt/ipop` and you can use `ipop` executable script to control IPOP.
 
