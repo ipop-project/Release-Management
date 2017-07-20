@@ -79,7 +79,7 @@ function configure
     sudo chroot /var/lib/lxc/default/rootfs apt-get -y install software-properties-common python-software-properties
 
     # install controller dependencies
-    if [ $VPNMODE = "switch-mode" ]; then
+    if [ $VPNMODE = "switch" ]; then
         pip install sleekxmpp pystun psutil
     else
         sudo chroot /var/lib/lxc/default/rootfs apt-get -y install 'python-pip'
@@ -100,7 +100,7 @@ function configure
         turnserver -c $TURN_ROOT_CONFIG
     fi
 
-    read -p "Replace symmetric NATS with full-cone NATS? (Y/n) " REPLACE_NAT
+    read -p "Use symmetric NATS? (Y/n) " REPLACE_NAT
 
     if [[ $REPLACE_NAT =~ [Yy](es)* ]]; then
         echo "Replacing symmetric NATS"
@@ -111,6 +111,7 @@ function configure
         done
         sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
     fi
+
 
     # open TCP ports (for ejabberd)
     for i in 5222 5269 5280; do
@@ -293,8 +294,8 @@ function containers-create
             topology_param="$topology_param $user_input"
         fi
     fi
-
-    if [[ "$VPNMODE" = "switch-mode" ]]; then
+    echo -e "\e[1;31mStarting containers. Please wait... \e[0m"
+    if [[ "$VPNMODE" = "switch" ]]; then
         sudo mkdir -p /dev/net
         sudo rm /dev/net/tun
         sudo mknod /dev/net/tun c 10 200
@@ -343,7 +344,7 @@ function containers-create
 
 function containers-start
 {
-    echo -e "\e[1;31mStarting containers. \e[0m"
+    echo -e "\e[1;31mStarting containers... \e[0m"
     for i in $(seq $min $max); do
         sudo bash -c "sudo lxc-start -n node$i --daemon;"
         echo "Container node$i started."
@@ -352,15 +353,15 @@ function containers-start
 
 function containers-del
 {
-    echo -e "\e[1;31mContainer deletion in progress. \e[0m"
+    echo -e "\e[1;31mDeleting containers... \e[0m"
     for i in $(seq $min $max); do
-        if [ $VPNMODE = "classic-mode" ]; then
+        if [ $VPNMODE = "classic" ]; then
             for j in $(seq $min $max); do
                 if [ "$i" != "$j" ]; then
                     sudo ejabberdctl delete_rosteritem "node$i" ejabberd "node$j" ejabberd
-                    sudo ejabberdctl unregister "node$i" ejabberd
                 fi
             done
+            sudo ejabberdctl unregister "node$i" ejabberd
         fi
         sudo lxc-stop -n "node$i"
         sudo lxc-destroy -n "node$i"
@@ -369,7 +370,7 @@ function containers-del
 
 function containers-stop
 {
-    echo -e "\e[1;31mStopping containers. \e[0m"
+    echo -e "\e[1;31mStopping containers... \e[0m"
     for i in $(seq $min $max); do
         sudo lxc-stop -n "node$i"
     done
@@ -379,7 +380,7 @@ function ipop-run
 {
    container_to_run=$1
 
-    if [ $VPNMODE = "switch-mode" ]; then
+    if [ $VPNMODE = "switch" ]; then
         echo "Running ipop in switch-mode"
         sudo chmod 0666 /dev/net/tun
         mkdir -p logs/
@@ -390,15 +391,12 @@ function ipop-run
             if [ "$container_to_run" = '#' ]; then
                 for i in $(seq $min $max); do
                     echo "Running node$i"
-                    sudo lxc-attach -n "node$i" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'ulimit -c unlimted && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
+                    sudo lxc-attach -n "node$i" -- nohup bash -c "cd $IPOP_HOME && ./node_config.sh run" &> /dev/null
+                    sleep 0.5
                 done
             else
                 echo "Running node$container_to_run"
-                sudo lxc-attach -n "node$container_to_run" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'ulimit -c unlimted && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
-                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
+                sudo lxc-attach -n "node$container_to_run" -- nohup bash -c "cd $IPOP_HOME && ./node_config.sh run" &> /dev/null
             fi
         else
             echo -e "\e[1;31mEnter # To RUN all containers or Enter the container number.  (e.g. Enter 1 to start node1)\e[0m"
@@ -406,15 +404,12 @@ function ipop-run
             if [ $user_input = '#' ]; then
                 for i in $(seq $min $max); do
                     echo "Running node$i"
-                    sudo lxc-attach -n "node$i" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'ulimit -c unlimited && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
-                    sudo lxc-attach -n "node$i" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
+                    sudo lxc-attach -n "node$i" -- nohup bash -c "cd $IPOP_HOME && ./node_config.sh run" &> /dev/null
+                    sleep 0.5
                 done
             else
                 echo "Running node$user_input"
-                sudo lxc-attach -n "node$user_input" -- bash -c 'sudo chmod 0666 /dev/net/tun'
-                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'ulimit -c unlimited && cd /home/ubuntu/ipop/ && ./ipop-tincan &' &> /dev/null
-                sudo lxc-attach -n "node$user_input" -- nohup bash -c 'cd /home/ubuntu/ipop/ && python -m controller.Controller -c ./ipop-config.json &' &> /dev/null
+                sudo lxc-attach -n "node$user_input" -- nohup bash -c "cd $IPOP_HOME && ./node_config.sh run" &> /dev/null
             fi
         fi
     fi
@@ -424,7 +419,7 @@ function ipop-kill
 {
     container_to_kill=$1
     # kill IPOP tincan and controller
-    if [ $VPNMODE = "switch-mode" ]; then
+    if [ $VPNMODE = "switch" ]; then
         sudo ./node/node_config.sh kill
     else
         if [[ ! ( -z "$container_to_kill" ) ]]; then
@@ -466,14 +461,8 @@ function visualizer-start
        read github_branch
        git checkout $github_branch
     fi
-    # Install visualizer deps in virtual env
-    python -m pip install virtualenv
-    python -m virtualenv venv
-    source ./venv/bin/activate
-    python -m pip install -r requirements.txt
-    nohup python aggr.py &> aggr.log &
-    sleep 5s
-    nohup python centVis.py &> centVis.log &
+    chmod +x setup_visualizer.sh
+    ./setup_visualizer.sh
     cd ..
 }
 
@@ -525,7 +514,7 @@ function ipop-status
 
 function logs
 {
-    if [ $VPNMODE = "classic-mode" ]; then
+    if [ $VPNMODE = "classic" ]; then
         for i in $(seq $min $max); do
                mkdir -p logs/"node$i"
                sudo lxc-info -n "node$i" > logs/"node$i"/container_status.txt
@@ -551,7 +540,7 @@ function logs
 function check-vpn-mode
 {
     if [ -z $VPNMODE ] ; then
-        echo -e "Select vpn mode to test:\nclassic-mode or switch-mode"
+        echo -e "Select vpn mode to test: classic or switch"
         read VPNMODE
         echo "MODE $VPNMODE" >> $HELP_FILE
     fi
@@ -623,7 +612,8 @@ if [[ -z $@ ]] ; then
             visualizer-stop
         ;;
         ("visualizer-status")
-            visulizer-status
+            visualizer-status
+        ;;
         ("ipop-tests")
             ipop-tests
         ;;

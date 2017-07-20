@@ -79,6 +79,12 @@ case $1 in
                 "\n}"\
         > $IPOP_CONFIG
         ;;
+    ("run")
+            mkdir -p logs
+            sudo chmod 0666 /dev/net/tun
+            nohup ./ipop-tincan &> ./logs/ctrl_start.log &
+            nohup python -m controller.Controller -c ./ipop-config.json &> ./logs/tin_start.log &
+        ;;
     ("kill")
             ps aux | grep "ipop-tincan" | awk '{print $2}' | xargs sudo kill -9
             ps aux | grep "controller.Controller" | awk '{print $2}' | xargs sudo kill -9
