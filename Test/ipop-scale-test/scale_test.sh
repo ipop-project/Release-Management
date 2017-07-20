@@ -100,16 +100,19 @@ function configure
         turnserver -c $TURN_ROOT_CONFIG
     fi
 
-    read -p "Use symmetric NATS? (Y/n) " REPLACE_NAT
-
-    if [[ $REPLACE_NAT =~ [Yy](es)* ]]; then
-        echo "Replacing symmetric NATS"
-        ### configure network
+    # configure network
+    read -p "Use symmetric NATS? (Y/n) " use_symmetric_nat
+    for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="MASQUERADE" {print $1}'); do
+        sudo iptables -t nat -D POSTROUTING $i
+    done
+    for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="SNAT" {print $1}'); do
+        sudo iptables -t nat -D POSTROUTING $i
+    done
+    if [[ $use_symmetric_nat =~ [Nn]([Oo])* ]]; then
         # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
-        for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="MASQUERADE" {print $1}'); do
-            sudo iptables -t nat -D POSTROUTING $i
-        done
         sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
+    else
+        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j MASQUERADE
     fi
 
 
