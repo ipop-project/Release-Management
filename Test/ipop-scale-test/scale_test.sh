@@ -57,8 +57,8 @@ function configure
     #Python dependencies for visualizer and ipop python tests
     sudo apt-get install -y python python-pip python-lxc
 
-    pip install --upgrade pip
-    pip install pymongo
+    sudo pip install --upgrade pip
+    sudo pip install pymongo
 
     if [[  ! ( "$is_external" = true ) ]]; then
         #Install and start mongodb for use ipop python tests
@@ -80,7 +80,7 @@ function configure
 
     # install controller dependencies
     if [ $VPNMODE = "switch" ]; then
-        pip install sleekxmpp pystun psutil
+        sudo pip install sleekxmpp pystun psutil
     else
         sudo chroot /var/lib/lxc/default/rootfs apt-get -y install 'python-pip'
         sudo chroot /var/lib/lxc/default/rootfs pip install 'sleekxmpp' pystun psutil
@@ -90,14 +90,14 @@ function configure
 
     if [[ ! ( "$is_external" = true ) ]]; then
         # Install turnserver
-        sudo apt-get install -y libconfuse0 turnserver
+        sudo apt-get install -y turnserver
         echo "containeruser:password:ipopvpn.org:authorized" | sudo tee --append $TURN_USERS
         # use IP aliasing to bind turnserver to this ipv4 address
         sudo ifconfig $NET_DEV:0 $NET_IP4 up
         # prepare turnserver config file
         sudo cp $TURN_CONFIG $TURN_ROOT_CONFIG
         sudo sed -i "s/listen_address = .*/listen_address = { \"$NET_IP4\" }/g" $TURN_ROOT_CONFIG
-        turnserver -c $TURN_ROOT_CONFIG
+        sudo systemctl restart turnserver
     fi
 
     # configure network
