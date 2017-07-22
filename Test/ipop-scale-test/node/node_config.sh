@@ -13,7 +13,7 @@ case $1 in
         CFx_xmpp_password="password"
         CFx_xmpp_host=$serv_addr
         CFx_xmpp_port='5222'
-        BaseTopologyManager_ip4='172.31.'$(($ipop_id / 256))'.'$(($ipop_id % 256))
+        BaseTopologyManager_ip4='10.254.'$(($ipop_id / 256))'.'$(($ipop_id % 256))
         CFx_ip4_mask='16'
         CentralVisualizer_name=$ipop_id
         CentralVisualizer_central_visualizer_addr=$serv_addr":8080/insertdata"
