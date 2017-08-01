@@ -14,7 +14,7 @@ case $1 in
         CFx_xmpp_host=$serv_addr
         CFx_xmpp_port='5222'
         BaseTopologyManager_ip4='10.254.'$(($ipop_id / 256))'.'$(($ipop_id % 256))
-        CFx_ip4_mask='16'
+        CFx_ip4_mask=16
         CentralVisualizer_name=$ipop_id
         CentralVisualizer_central_visualizer_addr=$serv_addr":8080/insertdata"
         isVisulizerEnabled=$5
@@ -24,8 +24,8 @@ case $1 in
         BaseTopologyManager_num_on_demand=$8
         BaseTopologyManager_num_inbound=$9
         turn_host=$serv_addr
-        turn_user=$10
-        turn_password=$11
+        turn_user=${10}
+        turn_password=${11}
         echo -e \
             "{"\
                 "\n  \"CFx\": {"\
@@ -34,15 +34,21 @@ case $1 in
                 "\n  \"Logger\": {"\
                 "\n    \"LogLevel\": \"DEBUG\""\
                 "\n  },"\
-		"\n  \"VirtualNetworkInitializer\": {"\
+		"\n  \"TincanInterface\": {"\
+                "\n    \"ctrl_recv_port\": 5801,"\
+                "\n    \"localhost\": \"127.0.0.1\","\
+                "\n    \"ctrl_send_port\": 5800,"\
+                "\n    \"localhost6\": \"::1\","\
+                "\n    \"dependencies\": [\"Logger\"],"\
 		"\n    \"Vnets\": [{"\
                 "\n       \"IP4\": \"$BaseTopologyManager_ip4\","\
-                "\n       \"IP4Prefix\": $CFx_ip4_mask, "\
+                "\n       \"IP4PrefixLen\": $CFx_ip4_mask, "\
+                "\n       \"MTU4\": 1200,"\
                 "\n       \"XMPPModuleName\": \"XmppClient\", "\
                 "\n       \"TapName\": \"ipop_tap0\","\
-                "\n       \"Description\": \"Ethernet Device\","\
-                "\n       \"IgnoredNetInterfaces\": [\"ipop_tap0\", \"ipop_tap1\", \"Bluetooth Network Connection\", \"VMware Network Adapter VMnet1\", \"VMware Network Adapter VMnet2\"],"\
-                "\n       \"L2TunnellingEnabled\": 1"\
+                "\n       \"Description\": \"Beta 2 Test Network\","\
+                "\n       \"IgnoredNetInterfaces\": [\"ipop_tap0\"],"\
+                "\n       \"L2TunnellingEnabled\": true"\
                 "\n     }],"\
 		"\n     \"Stun\": [\"stun.l.google.com:19302\"],"\
                 "\n     \"Turn\": [{"\
@@ -54,7 +60,6 @@ case $1 in
                 "\n  \"XmppClient\": {"\
 		"\n    \"XmppDetails\": [ "\
 		"\n      { "\
-                "\n        \"Enabled\": true,"\
                 "\n        \"Username\": \"$CFx_xmpp_username\","\
                 "\n        \"Password\": \"$CFx_xmpp_password\","\
                 "\n        \"AddressHost\": \"$CFx_xmpp_host\","\
@@ -63,7 +68,8 @@ case $1 in
                 "\n        \"AuthenticationMethod\": \"password\","\
                 "\n        \"AcceptUntrustedServer\": true"\
 		"\n      } "\
-		"\n    ] "\
+		"\n    ], "\
+                "\n    \"TimerInterval\": 10"\
                 "\n  },"\
                 "\n  \"BaseTopologyManager\": {"\
                 "\n    \"NumberOfSuccessors\": $BaseTopologyManager_num_successors,"\
