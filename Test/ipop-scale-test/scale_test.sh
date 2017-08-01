@@ -65,15 +65,17 @@ function configure-bridges
     fi
     ### Create Bridges
     for (( CNTR=1; CNTR<$BRIDGE_COUNT; CNTR+=1 )); do
+        CNTR_GATEWAY="10.$CNTR.3.1"
+        CNTR_NETWORK="10.$CNTR.3.0/24"
         echo "creating lxcbr$CNTR"
         sudo brctl addbr "lxcbr$CNTR"
         for (( CNTR2=0; CNTR2<$CNTR; CNTR2+=1 )); do
+            CNTR2_NETWORK="10.${CNTR2}.3.0/24"
             echo "setting up iptables to block local traffic between lxcbr$CNTR and lxcbr$CNTR2"
-            sudo iptables -A FORWARD -i "lxcbr$CNTR" -o "lxcbr$CNTR2" -j DROP
-            sudo iptables -A FORWARD -i "lxcbr$CNTR2" -o "lxcbr$CNTR" -j DROP
+            sudo iptables -A FORWARD -s "$CNTR_NETWORK" -d "${CNTR2_NETWORK}" -j REJECT
+            sudo iptables -A FORWARD -s "${CNTR2_NETWORK}" -d "$CNTR_NETWORK" -j REJECT
         done
         # Set up bridge interface ips
-        CNTR_GATEWAY="10.$CNTR.3.1"
         echo "Setting up lxc net with Gateway: $CNTR_GATEWAY"
         sudo ifconfig "lxcbr$CNTR" "$CNTR_GATEWAY/24"
     done
@@ -134,10 +136,11 @@ function configure
     fi
 
     # configure network
+    # step 1 clear iptables settings
     sudo iptables --flush
-    # step 1 setup bridges
+    # step 2 setup bridges
     configure-bridges
-    # step 2 bridge nat setup
+    # step 3 bridge nat setup
     read -p "Use symmetric NATS? (Y/n) " use_symmetric_nat
     if [[ $use_symmetric_nat =~ [Nn]([Oo])* ]]; then
         # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
@@ -190,6 +193,7 @@ function containers-create
     NET_IP4=$(echo $NET_TEST | awk '{print $7}')
 
     MODELINE=$(cat $HELP_FILE | grep MODE)
+    BRIDGELINE=$(cat $HELP_FILE | grep BRIDGE_COUNT)
 
     # function parameters
     container_count=$1
@@ -203,11 +207,13 @@ function containers-create
         min=1
         echo -e "MIN $min\nMAX $max\nNR_VNODES $max" > $HELP_FILE
         echo $MODELINE >> $HELP_FILE
+        echo $BRIDGELINE >> $HELP_FILE
     else
         max=$container_count
         min=1
         echo -e "MIN 1\nMAX $max\nNR_VNODES $max" > $HELP_FILE
         echo $MODELINE >> $HELP_FILE
+        echo $BRIDGELINE >> $HELP_FILE
     fi
 
     if [ -z "$controller_repo_url_arg" ]; then
