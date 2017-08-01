@@ -6,6 +6,10 @@ import cmd
 import tempfile
 import lxc
 import json
+import shlex
+import threading
+import time
+import re
 from datetime import datetime
 from pymongo import MongoClient
 
@@ -58,6 +62,30 @@ class ScaleTestCL(cmd.Cmd):
             results = pingall_test(packet_count)
             self.ipopdb['ping'].insert_many(results)
 
+    def do_churn(self, arg):
+        ("Create newtork churn process. Cycles "
+         "through nodes in the network turning them off and back "
+         "on again for given number of cyles and time between each "
+         "node reboot. default 2 cycles and 180 second recovery time.\n"
+         "e.g. churn 2 180\n"
+         "format: cmd (# of cycles) (recovery time)"
+        )
+        args = arg.split()
+
+        if len(args) == 0 or args[0].isdigit():
+            cycle_num = 2
+            recovery_time = 180
+            if len(args) > 0 and arg[0].isdigit():
+                cycle_num = int(arg[0])
+            if len(args) == 2 and arg[1].isdigit():
+                recovery_time = int(arg[1])
+            churn_thread = threading.Thread(target=simulate_churn,
+                                            args=(cycle_num, recovery_time))
+            churn_thread.daemon = True
+            churn_thread.start()
+        else:
+            print("Invalid arguments. See `help churn`")
+
     def do_iperf(self, arg):
         """ Iperf test:
             e.g. iperf node1 node2
@@ -96,6 +124,9 @@ class ScaleTestCL(cmd.Cmd):
         pretty_json_file("./data/iperf.json")
         print("files saved in {}".format(data_directory_path))
 
+    def do_EOF(self, arg):
+        "Exit with CTRL+D"
+        return self.do_exit(arg)
 
     def do_exit(self, arg):
         """Exit command-line scale testing interface"""
@@ -120,12 +151,36 @@ def get_ipop_ip(container):
                           "receiver {0}".format(container.name))
     return ips[1]
 
+
+def simulate_churn(cycle_num, recovery_time):
+    print("Starting network churn simulation")
+    containers = lxc.list_containers(as_object=True)
+    for _ in range(cycle_num):
+        for container in containers:
+            if container.name != "default":
+                print("ipop on {} rebooting...".format(container.name))
+                ipop_command(container.name, "ipop-kill")
+                time.sleep(2)
+                ipop_command(container.name, "ipop-run")
+                time.sleep(recovery_time)
+
+def ipop_command(target_name, command):
+    target_num = int(re.findall(r"\d+", target_name)[0])
+    ipop_scale_test_command = "./scale_test.sh {} {}".format(command, target_num)
+    return host_run(ipop_scale_test_command)
+
+
 def run(node, command):
     with tempfile.NamedTemporaryFile() as out_file:
         node.attach_wait(lxc.attach_run_command, command, stdout=out_file.file)
         out_file.seek(0)
         output = out_file.read()
         return output
+
+def host_run(command):
+    proc = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    output = proc.stdout.read()[:-1].decode("utf-8")
+    return output
 
 def ping_test(sender_name, receiver_name, packet_count):
     sender = lxc.Container(sender_name)

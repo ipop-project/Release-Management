@@ -101,13 +101,8 @@ function configure
     fi
 
     # configure network
+    sudo iptables --flush
     read -p "Use symmetric NATS? (Y/n) " use_symmetric_nat
-    for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="MASQUERADE" {print $1}'); do
-        sudo iptables -t nat -D POSTROUTING $i
-    done
-    for i in $(sudo iptables -L POSTROUTING -t nat --line-numbers | awk '$2=="SNAT" {print $1}'); do
-        sudo iptables -t nat -D POSTROUTING $i
-    done
     if [[ $use_symmetric_nat =~ [Nn]([Oo])* ]]; then
         # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
         sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
