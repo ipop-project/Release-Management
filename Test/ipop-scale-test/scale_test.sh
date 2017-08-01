@@ -16,6 +16,7 @@ VPNMODE=$(cat $HELP_FILE 2>/dev/null | grep MODE | awk '{print $2}')
 min=$(cat $HELP_FILE 2>/dev/null | grep MIN | awk '{print $2}')
 max=$(cat $HELP_FILE 2>/dev/null | grep MAX | awk '{print $2}')
 nr_vnodes=$(cat $HELP_FILE 2>/dev/null | grep NR_VNODES | awk '{print $2}')
+BRIDGE_COUNT=$(cat $HELP_FILE 2>/dev/null | grep BRIDGE_COUNT | awk '{print $2}')
 NET_TEST=$(ip route get 8.8.8.8)
 NET_DEV=$(echo $NET_TEST | awk '{print $5}')
 NET_IP4=$(echo $NET_TEST | awk '{print $7}')
@@ -50,6 +51,34 @@ function options
     echo $user_input
 }
 
+function configure-bridges
+{
+    if [ -z "$BRIDGE_COUNT" ]; then
+        read -p "Enter number of bridges to split containers between (Default 1): `echo $'\n> '`" user_input
+        if [ -z "$user_input" ]; then
+            user_input=2
+        fi
+        BRIDGE_COUNT=$user_input
+        echo "BRIDGE_COUNT $user_input" >> $HELP_FILE
+    else
+        echo "BRIDGE COUNT set to $BRIDGE_COUNT"
+    fi
+    ### Create Bridges
+    for (( CNTR=1; CNTR<$BRIDGE_COUNT; CNTR+=1 )); do
+        echo "creating lxcbr$CNTR"
+        sudo brctl addbr "lxcbr$CNTR"
+        for (( CNTR2=0; CNTR2<$CNTR; CNTR2+=1 )); do
+            echo "setting up iptables to block local traffic between lxcbr$CNTR and lxcbr$CNTR2"
+            sudo iptables -A FORWARD -i "lxcbr$CNTR" -o "lxcbr$CNTR2" -j DROP
+            sudo iptables -A FORWARD -i "lxcbr$CNTR2" -o "lxcbr$CNTR" -j DROP
+        done
+        # Set up bridge interface ips
+        CNTR_GATEWAY="10.$CNTR.3.1"
+        echo "Setting up lxc net with Gateway: $CNTR_GATEWAY"
+        sudo ifconfig "lxcbr$CNTR" "$CNTR_GATEWAY/24"
+    done
+}
+
 function configure
 {
     # if argument is true mongodb and ejabberd won't be installed
@@ -72,7 +101,6 @@ function configure
     sudo apt-get -y install lxc g++-4.9
     sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 10
 
-
     # Install ubuntu OS in the lxc-container
     sudo lxc-create -n default -t ubuntu
     sudo chroot /var/lib/lxc/default/rootfs apt-get -y update
@@ -87,12 +115,16 @@ function configure
         sudo chroot /var/lib/lxc/default/rootfs pip install 'sleekxmpp' pystun psutil
     fi
 
-    echo 'lxc.cgroup.devices.allow = c 10:200 rwm' | sudo tee --append $DEFAULT_LXC_CONFIG
+    # allow tap devices to be used in containers
+    lxc_device_option="lxc.cgroup.devices.allow = c 10:200 rwm"
+    if [[ -z "$( sudo cat $DEFAULT_LXC_CONFIG | grep "$lxc_device_option" )" ]]; then
+        echo "$lxc_device_option" | sudo tee --append $DEFAULT_LXC_CONFIG
+    fi
 
     if [[ ! ( "$is_external" = true ) ]]; then
         # Install turnserver
         sudo apt-get install -y turnserver
-        echo "containeruser:password:ipopvpn.org:authorized" | sudo tee --append $TURN_USERS
+        echo "containeruser:password:$NET_IP4:authorized" | sudo tee --append $TURN_USERS
         # use IP aliasing to bind turnserver to this ipv4 address
         sudo ifconfig $NET_DEV:0 $NET_IP4 up
         # prepare turnserver config file
@@ -103,14 +135,21 @@ function configure
 
     # configure network
     sudo iptables --flush
+    # step 1 setup bridges
+    configure-bridges
+    # step 2 bridge nat setup
     read -p "Use symmetric NATS? (Y/n) " use_symmetric_nat
     if [[ $use_symmetric_nat =~ [Nn]([Oo])* ]]; then
         # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
         sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
     else
-        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j MASQUERADE
+        for (( CNTR=0; CNTR<$BRIDGE_COUNT; CNTR+=1 )); do
+             sudo iptables -t nat -A POSTROUTING -t nat -o "lxcbr$CNTR" -j MASQUERADE --random
+             sudo iptables -A FORWARD -i "lxcbr$CNTR" -o $NET_DEV -m state --state ESTABLISHED,RELATED -j ACCEPT
+             sudo iptables -A FORWARD -i $NET_DEV -o "lxcbr$CNTR" -j ACCEPT
+             echo "SETTING UP lxcbr$CNTR in symmetric nat mode"
+        done
     fi
-
 
     # open TCP ports (for ejabberd)
     for i in 5222 5269 5280; do
@@ -313,8 +352,30 @@ function containers-create
         done
     else
         for i in $(seq $min $max); do
+            sudo lxc-copy -n default -N "node$i"
+
+            #### Distribute containers evenly over bridges
+            lxc_node_config_file="/var/lib/lxc/node$i/config"
+            bridge_num=$(( $i % $BRIDGE_COUNT ))
+            static_ip=$(( $i + 10 ))
+            if [[  $bridge_num != 0 ]]; then
+                lxc_ipv4_option="lxc.network.ipv4 = 10.$bridge_num.3.$static_ip/24"
+                lxc_ipv4_gateway_option="lxc.network.ipv4.gateway = 10.$bridge_num.3.1"
+                lxc_link_option="lxc.network.link = lxcbr$bridge_num"
+                echo "configuring node$i on bridge: lxcbr$bridge_num"
+                sudo sed -i "s/lxc.network.link = .*/$lxc_link_option/g" $lxc_node_config_file
+                if [[ -z "$( sudo cat $lxc_node_config_file | grep "$lxc_ipv4_option" )" ]]; then
+                    echo "$lxc_ipv4_option" | sudo tee --append $lxc_node_config_file
+                fi
+                if [[ -z "$( sudo cat $lxc_node_config_file | grep "$lxc_ipv4_gateway_option" )" ]]; then
+                    echo "$lxc_ipv4_gateway_option" | sudo tee --append $lxc_node_config_file
+                fi
+            else
+                echo "configuring node$i on bridge: lxcbr0"
+            fi
+
+            #### Start container while making tap device
             sudo bash -c "
-            lxc-copy -n default -N node$i;
             sudo lxc-start -n node$i --daemon;
             sudo lxc-attach -n node$i -- bash -c 'sudo mkdir -p $IPOP_HOME; sudo mkdir /dev/net; sudo mknod /dev/net/tun c 10 200; sudo chmod 0666 /dev/net/tun';
             "
@@ -340,6 +401,9 @@ function containers-start
     echo -e "\e[1;31mStarting containers... \e[0m"
     for i in $(seq $min $max); do
         sudo bash -c "sudo lxc-start -n node$i --daemon;"
+        sudo bash -c "sudo lxc-attach -n node$i -- bash -c 'sudo mkdir /dev/net; sudo mknod /dev/net/tun c 10 200; sudo chmod 0666 /dev/net/tun';
+            "
+
         echo "Container node$i started."
     done
 }
@@ -441,7 +505,7 @@ function visualizer-start
 {
     echo -e "\e[1;31mEnter visualizer github URL(default: $DEFAULT_VISUALIZER_REPO) \e[0m"
     read githuburl_visualizer
-    if [ -z "$githuburl_visualizer"]; then
+    if [ -z "$githuburl_visualizer" ]; then
         githuburl_visualizer=$DEFAULT_VISUALIZER_REPO
     fi
     git clone $githuburl_visualizer
