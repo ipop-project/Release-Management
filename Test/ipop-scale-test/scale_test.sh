@@ -72,8 +72,8 @@ function configure-bridges
         for (( CNTR2=0; CNTR2<$CNTR; CNTR2+=1 )); do
             CNTR2_NETWORK="10.${CNTR2}.3.0/24"
             echo "setting up iptables to block local traffic between lxcbr$CNTR and lxcbr$CNTR2"
-            sudo iptables -A FORWARD -s "$CNTR_NETWORK" -d "${CNTR2_NETWORK}" -j REJECT
-            sudo iptables -A FORWARD -s "${CNTR2_NETWORK}" -d "$CNTR_NETWORK" -j REJECT
+            sudo iptables -A FORWARD -s "$CNTR_NETWORK" -d "${CNTR2_NETWORK}" -j DROP
+            sudo iptables -A FORWARD -s "${CNTR2_NETWORK}" -d "$CNTR_NETWORK" -j DROP
         done
         # Set up bridge interface ips
         echo "Setting up lxc net with Gateway: $CNTR_GATEWAY"
@@ -363,10 +363,11 @@ function containers-create
             #### Distribute containers evenly over bridges
             lxc_node_config_file="/var/lib/lxc/node$i/config"
             bridge_num=$(( $i % $BRIDGE_COUNT ))
+            lxc_ipv4_gateway_option="lxc.network.ipv4.gateway = 10.$bridge_num.3.1"
+            lxc_ipv4_gateway="10.$bridge_num.3.1"
             static_ip=$(( $i + 10 ))
             if [[  $bridge_num != 0 ]]; then
                 lxc_ipv4_option="lxc.network.ipv4 = 10.$bridge_num.3.$static_ip/24"
-                lxc_ipv4_gateway_option="lxc.network.ipv4.gateway = 10.$bridge_num.3.1"
                 lxc_link_option="lxc.network.link = lxcbr$bridge_num"
                 echo "configuring node$i on bridge: lxcbr$bridge_num"
                 sudo sed -i "s/lxc.network.link = .*/$lxc_link_option/g" $lxc_node_config_file
@@ -389,7 +390,7 @@ function containers-create
             sudo cp ./ipop-tincan "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo cp './node/node_config.sh' "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo lxc-attach -n node$i -- bash -c "sudo chmod +x $IPOP_TINCAN; sudo chmod +x $IPOP_HOME/node_config.sh;"
-            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param containeruser password"
+            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param containeruser password $lxc_ipv4_gateway"
             echo "Container node$i started."
             sudo ejabberdctl register "node$i" ejabberd password
             for j in $(seq $min $max); do
