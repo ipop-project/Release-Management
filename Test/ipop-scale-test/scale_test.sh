@@ -214,17 +214,19 @@ function containers-create
         git clone $controller_repo_url_arg
     fi
 
-    if [ -z "$tincan_repo_url_arg" ]; then
-        # Check whether Tincan executables exists in the current path
-        if [ -e $TINCAN ]; then
-            echo "Tincan binary present, skipping build script execution."
-        else
-            echo -e "\e[1;31mEnter github URL for Tincan (default: $DEFAULT_TINCAN_REPO) \e[0m"
-            read github_tincan
-            if [ -z "$github_tincan" ] ; then
-                github_tincan=$DEFAULT_TINCAN_REPO
+    if [ -e $TINCAN ]; then
+        echo "Using existing Tincan binary..."
+    else
+        if ! [ -e "./Tincan/trunk/build/" ]; then
+            if [ -z "$tincan_repo_url_arg" ]; then
+                echo -e "\e[1;31mEnter github URL for Tincan (default: $DEFAULT_TINCAN_REPO) \e[0m"
+                read github_tincan
+                if [ -z "$github_tincan" ] ; then
+                    github_tincan=$DEFAULT_TINCAN_REPO
+                fi
+            else
+                github_tincan=$tincan_repo_url_arg
             fi
-
             git clone $github_tincan
             echo -e "\e[1;31mDo you want to continue using master branch? (Y/N):\e[0m"
             read user_input
@@ -235,20 +237,12 @@ function containers-create
                 git checkout $github_branch
                 cd ..
             fi
-            cd ./Tincan/trunk/build/
-            echo "Building Tincan binary"
-            make
-            cd ../../..
-            cp ./Tincan/trunk/out/release/x64/ipop-tincan .
-            sudo rm -r Tincan
         fi
-    else
-        git clone $tincan_repo_url_arg
-        cd ./Tincan/trunk/build
+        cd ./Tincan/trunk/build/
+        echo "Building Tincan binary"
         make
         cd ../../..
-        cp ./Tincan/trunk/out/release/x64/ipop-tincan .
-        sudo rm -r Tincan
+        cp ./Tincan/trunk/out/release/x64/ipop-tincan .        
     fi
 
     if [ -z "$visualizer_arg" ]; then
@@ -337,7 +331,7 @@ function containers-create
             done
         done
     fi
-    sudo rm -r Controllers
+    #sudo rm -r Controllers
 }
 
 function containers-start
