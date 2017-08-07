@@ -1,0 +1,6 @@
+LXC_PACKAGES  'python psmisc iperf iperf3'
+LXC_CONFIG '/var/lib/lxc/default/config'
+TINCAN_REPO https://github.com/ipop-project/Tincan
+CONTROLLERS_REPO https://github.com/ipop-project/Controllers master
+VISUALIZER_REPO https://github.com/cstapler/IPOPNetVisualizer master
+VISUALIZER_ENABLED true

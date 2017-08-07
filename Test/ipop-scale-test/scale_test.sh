@@ -3,19 +3,22 @@
 IPOP_HOME="/home/ubuntu/ipop"
 IPOP_TINCAN="$IPOP_HOME/ipop-tincan"
 IPOP_CONTROLLER="controller.Controller"
-HELP_FILE="./auto_config_scale.txt"
+DEFAULTS_FILE="./scale_test_defaults.txt"
+OVERRIDES_FILE="./auto_config_scale.txt"
 TINCAN="./ipop-tincan"
 CONTROLLER="./Controllers"
-DEFAULT_LXC_PACKAGES='python psmisc iperf iperf3'
-DEFAULT_LXC_CONFIG='/var/lib/lxc/default/config'
-DEFAULT_TINCAN_REPO='https://github.com/ipop-project/Tincan'
-DEFAULT_CONTROLLERS_REPO='https://github.com/ipop-project/Controllers'
-DEFAULT_VISUALIZER_REPO='https://github.com/cstapler/IPOPNetVisualizer'
+DEFAULT_LXC_PACKAGES=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_PACKAGES | awk '{print $2}')
+DEFAULT_LXC_CONFIG=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_CONFIG | awk '{print $2}')
+DEFAULT_TINCAN_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk '{print $2}')
+DEFAULT_TINCAN_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk '{print $3}')
+DEFAULT_CONTROLLERS_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep CONTROLLERS_REPO | awk '{print $2}')
+DEFAULT_CONTROLLERS_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep CONTROLLERS_REPO | awk '{print $3}')
+DEFAULT_VISUALIZER_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep VISUALIZER_REPO | awk '{print $2}')
+DEFAULT_VISUALIZER_ENABLED=$(cat $DEFAULTS_FILE 2>/dev/null | grep VISUALIZER_ENABLED | awk '{print $2}')
 OS_VERSION=$(lsb_release -r -s)
-VPNMODE=$(cat $HELP_FILE 2>/dev/null | grep MODE | awk '{print $2}')
-min=$(cat $HELP_FILE 2>/dev/null | grep MIN | awk '{print $2}')
-max=$(cat $HELP_FILE 2>/dev/null | grep MAX | awk '{print $2}')
-nr_vnodes=$(cat $HELP_FILE 2>/dev/null | grep NR_VNODES | awk '{print $2}')
+VPNMODE=$(cat $OVERRIDES_FILE 2>/dev/null | grep MODE | awk '{print $2}')
+min=$(cat $OVERRIDES_FILE 2>/dev/null | grep MIN | awk '{print $2}')
+max=$(cat $OVERRIDES_FILE 2>/dev/null | grep MAX | awk '{print $2}')
 NET_TEST=$(ip route get 8.8.8.8)
 NET_DEV=$(echo $NET_TEST | awk '{print $5}')
 NET_IP4=$(echo $NET_TEST | awk '{print $7}')
@@ -23,11 +26,13 @@ TURN_USERS="/etc/turnserver/turnusers.txt"
 TURN_ROOT_CONFIG="/etc/turnserver/turnserver.conf"
 TURN_CONFIG="./config/turnserver.conf"
 
+
 function help()
 {
     echo 'Enter from the following options:
     configure                      : install/prepare default container
     containers-create              : create and start containers
+    containers-update              : restart containers adding IPOP src changes
     containers-start               : start stopped containers
     containers-stop                : stop containers
     containers-del                 : delete containers
@@ -150,116 +155,105 @@ function containers-create
     NET_DEV=$(echo $NET_TEST | awk '{print $5}')
     NET_IP4=$(echo $NET_TEST | awk '{print $7}')
 
-    MODELINE=$(cat $HELP_FILE | grep MODE)
+    MODELINE=$(cat $OVERRIDES_FILE | grep MODE)
 
     # function parameters
-    container_count=$1
-    controller_repo_url_arg=$2
-    tincan_repo_url_arg=$3
-    visualizer_arg=$4
-    is_external=$5
+    if ! [ -z $1 ]; then
+        container_count=$1
+    fi
+    if ! [ -z $2 ]; then
+        controller_repo_url=$2
+    else
+        controller_repo_url=$DEFAULT_CONTROLLERS_REPO
+    fi
+    if ! [ -z $3 ]; then
+        controller_branch=$3
+    else
+        controller_branch=$DEFAULT_CONTROLLERS_BRANCH
+    fi
+    if ! [ -z $4 ]; then
+        tincan_repo_url=$4
+    else
+        tincan_repo_url=$DEFAULT_TINCAN_REPO
+    fi
+
+    if ! [ -z $5 ]; then
+        tincan_branch=$5
+    else
+        tincan_branch=$DEFAULT_TINCAN_BRANCH
+    fi
+    if ! [ -z $6 ]; then
+        visualizer_enabled=$6
+    else
+        visualizer_enabled=$DEFAULT_VISUALIZER_ENABLED
+    fi
+    if ! [ -z $7 ]; then
+        is_external=$7
+    fi
 
     if [ -z "$container_count" ]; then
         read -p "No of containers to be created: " max
-        min=1
-        echo -e "MIN $min\nMAX $max\nNR_VNODES $max" > $HELP_FILE
-        echo $MODELINE >> $HELP_FILE
     else
         max=$container_count
-        min=1
-        echo -e "MIN 1\nMAX $max\nNR_VNODES $max" > $HELP_FILE
-        echo $MODELINE >> $HELP_FILE
     fi
+    min=1
+    echo -e "MIN $min\nMAX $max" > $OVERRIDES_FILE
+    echo $MODELINE >> $OVERRIDES_FILE
 
-    if [ -z "$controller_repo_url_arg" ]; then
-        # Check if IPOP controller executables already exists
-        if [ -e $CONTROLLER ]; then
-            echo -e "\e[1;31mControllers repo already present in the current path. Continue with existing repo? (Y/N) \e[0m"
-            read user_input
-            if [[ "$user_input" =~ [Nn](o)* ]]; then
-                rm -rf $CONTROLLER
-                echo -e "\e[1;31mEnter IPOP Controller github URL(default: $DEFAULT_CONTROLLERS_REPO)\e[0m"
-                read githuburl_ctrl
-                if [ -z "$githuburl_ctrl" ]; then
-                    githuburl_ctrl=$DEFAULT_CONTROLLERS_REPO
-                fi
-                git clone $githuburl_ctrl
-                echo -e "\e[1;31mDo you want to continue using master branch? (Y/N):\e[0m"
-                read user_input
-                if [ $user_input = 'N' ]; then
-                    echo -e "Enter git repo branch name:"
-                    read github_branch
-                    cd Controllers
-                    git checkout $github_branch
-                    cd ..
-                fi
-            fi
-        else
-            echo -e "\e[1;31mEnter IPOP Controller github URL(default: $DEFAULT_CONTROLLERS_REPO)\e[0m"
-            read githuburl_ctrl
-            if [ -z "$githuburl_ctrl" ]; then
-                githuburl_ctrl=$DEFAULT_CONTROLLERS_REPO
-            fi
-            git clone $githuburl_ctrl
-            echo -e "\e[1;31mDo you want to continue using master branch? (Y/N):\e[0m"
-            read user_input
-            if [[ "$user_input" =~ [Nn](o)* ]]; then
-                echo -e "Enter git repo branch name:"
-                read github_branch
-                cd Controllers
-                git checkout $github_branch
-                cd ..
+
+    if ! [ -e $CONTROLLER ]; then
+        if [ -z "$controller_repo_url" ]; then
+            echo -e "\e[1;31mEnter IPOP Controller github URL\e[0m"
+            read controller_repo_url
+            if [ -z "$controller_repo_url" ]; then
+                error "A controller repo URL is required"
             fi
         fi
-    else
-        git clone $controller_repo_url_arg
+        git clone $controller_repo_url
+        if [ -z $controller_branch ]; then
+                echo -e "Enter git repo branch name:"
+                read controller_branch
+        fi
+        cd Controllers
+        git checkout $controller_branch
+        cd ..
     fi
 
     if [ -e $TINCAN ]; then
         echo "Using existing Tincan binary..."
     else
         if ! [ -e "./Tincan/trunk/build/" ]; then
-            if [ -z "$tincan_repo_url_arg" ]; then
+            if [ -z "$tincan_repo_url" ]; then
                 echo -e "\e[1;31mEnter github URL for Tincan (default: $DEFAULT_TINCAN_REPO) \e[0m"
-                read github_tincan
-                if [ -z "$github_tincan" ] ; then
-                    github_tincan=$DEFAULT_TINCAN_REPO
+                read tincan_repo_url
+                if [ -z "$tincan_repo_url" ] ; then
+                    error "A Tincan repo URL is required"
                 fi
-            else
-                github_tincan=$tincan_repo_url_arg
             fi
-            git clone $github_tincan
-            echo -e "\e[1;31mDo you want to continue using master branch? (Y/N):\e[0m"
-            read user_input
-            if [[ "$user_input" =~ [Nn](o)* ]]; then
-                echo -e "Enter git repo branch name:"
-                read github_branch
-                cd Tincan
-                git checkout $github_branch
-                cd ..
+            git clone $tincan_repo_url
+            if [ -z $tincan_branch ]; then
+            echo -e "Enter git repo branch name:"
+                read tincan_branch
             fi
+            cd Tincan
+            git checkout $tincan_branch
+            cd ..
         fi
         cd ./Tincan/trunk/build/
         echo "Building Tincan binary"
         make
         cd ../../..
-        cp ./Tincan/trunk/out/release/x64/ipop-tincan .        
+        cp ./Tincan/trunk/out/release/x64/ipop-tincan .
     fi
 
-    if [ -z "$visualizer_arg" ]; then
+    if [ -z "$visualizer_enabled" ]; then
         echo -e "\e[1;31mEnable visualization? (Y/N): \e[0m"
-        read visualizer
-        if [[ "$visualizer" =~ [Yy](es)* ]]; then
-            isvisual=true
-        else
-            isvisual=false
-        fi
+        read visualizer_enabled
+    fi
+    if [[ "$visualizer_enabled" =~ [Yy](es)* ]]; then
+        isvisual=true
     else
-        if [[ "$visualizer_arg" =~ [Yy](es)* ]]; then
-            isvisual=true
-        else
-            isvisual=false
-        fi
+        isvisual=false
     fi
 
     topology_param="4 4 0 4"
@@ -366,6 +360,24 @@ function containers-stop
     echo -e "\e[1;31mStopping containers... \e[0m"
     for i in $(seq $min $max); do
         sudo lxc-stop -n "node$i"
+    done
+}
+
+function containers-update
+{
+    containers-stop
+    for i in $(seq $min $max); do
+        sudo bash -c "
+        lxc-copy -n default -N node$i;
+        sudo lxc-start -n node$i --daemon;
+        sudo lxc-attach -n node$i -- bash -c 'sudo mkdir -p $IPOP_HOME; sudo mkdir /dev/net; sudo mknod /dev/net/tun c 10 200; sudo chmod 0666 /dev/net/tun';
+        "
+        sudo cp -r ./Controllers/controller/ "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
+        sudo cp ./ipop-tincan "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
+        sudo cp './node/node_config.sh' "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
+        sudo lxc-attach -n node$i -- bash -c "sudo chmod +x $IPOP_TINCAN; sudo chmod +x $IPOP_HOME/node_config.sh;"
+        sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param containeruser password"
+        echo "Container node$i started."
     done
 }
 
@@ -535,7 +547,7 @@ function check-vpn-mode
     if [ -z $VPNMODE ] ; then
         echo -e "Select vpn mode to test: classic or switch"
         read VPNMODE
-        echo "MODE $VPNMODE" >> $HELP_FILE
+        echo "MODE $VPNMODE" >> $OVERRIDES_FILE
     fi
 }
 
@@ -612,6 +624,9 @@ if [[ -z $@ ]] ; then
         ("containers-stop")
             containers-stop
         ;;
+        ("containers-update")
+            containers-update
+        ;;        
         ("ipop-run")
             ipop-run
         ;;
