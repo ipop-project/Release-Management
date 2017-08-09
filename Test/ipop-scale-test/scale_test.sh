@@ -39,6 +39,7 @@ function help()
     visualizer-stop                : stop visualizer processes
     visualizer-status              : show statuses of visualizer processes
     logs                           : aggregate ipop logs under ./logs
+    mode                           : show or change ipop mode to test
     '
 }
 
@@ -563,7 +564,33 @@ function ipop-tests
     sudo python ipoplxcutils/main.py
 }
 
+function mode
+{
+    action=$1
+    current_vpn_mode=$(cat $HELP_FILE 2>/dev/null | grep MODE | awk '{print $2}')
+    case $action in
+        "change")
+            if [[ "$current_vpn_mode" == "classic" ]]; then
+                echo "Mode changed to switch."
+                sed -i "s/MODE .*/MODE switch/g" $HELP_FILE
+            else
+                echo "Mode changed to classic."
+                sed -i "s/MODE .*/MODE classic/g" $HELP_FILE
+            fi
+            ;;
+        *)
+            echo "Current mode: $current_vpn_mode"
+            ;;
+    esac
+}
+
+function mode-options
+{
+    echo -e "Options:\nshow -- view current mode\nchange -- switch between modes"
+}
+
 check-vpn-mode
+
 $@
 
 if [[ -z $@ ]] ; then
@@ -611,6 +638,11 @@ if [[ -z $@ ]] ; then
         ;;
         ("logs")
             logs
+        ;;
+        ("mode")
+        mode-options
+        read -p "`echo $'> '`" action
+        mode $action
         ;;
     esac
 fi
