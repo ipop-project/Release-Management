@@ -25,7 +25,7 @@ case $1 in
         BaseTopologyManager_num_inbound=$9
         turn_user="${10}"
         turn_password="${11}"
-        turn_host="${12}"
+        turn_stun_address="${12}"
         echo -e \
             "{"\
                 "\n  \"CFx\": {"\
@@ -50,9 +50,9 @@ case $1 in
                 "\n       \"IgnoredNetInterfaces\": [\"ipop_tap0\"],"\
                 "\n       \"L2TunnellingEnabled\": true"\
                 "\n     }],"\
-		"\n     \"Stun\": [\"stun.l.google.com:19302\"],"\
+		"\n     \"Stun\": [\"$turn_stun_address:3478\"],"\
                 "\n     \"Turn\": [{"\
-                "\n        \"Address\": \"$turn_host:19302\","\
+                "\n        \"Address\": \"$turn_stun_address:19302\","\
                 "\n        \"User\": \"$turn_user\","\
                 "\n        \"Password\": \"$turn_password\""\
                 "\n     }]"\
