@@ -2,7 +2,8 @@
 ipop-tincan
 IPOPNetVisualizer/
 Tincan/
-Controller/
+Controllers/
+Network-Visualizer/
 logs/
 data/
 controller/

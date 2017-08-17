@@ -7,6 +7,7 @@ DEFAULTS_FILE="./scale_test_defaults.txt"
 OVERRIDES_FILE="./auto_config_scale.txt"
 TINCAN="./ipop-tincan"
 CONTROLLER="./Controllers"
+VISUALIZER="./Network-Visualizer"
 DEFAULT_LXC_PACKAGES=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_PACKAGES | awk '{print $2}')
 DEFAULT_LXC_CONFIG=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_CONFIG | awk '{print $2}')
 DEFAULT_TINCAN_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk '{print $2}')
@@ -14,6 +15,7 @@ DEFAULT_TINCAN_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk 
 DEFAULT_CONTROLLERS_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep CONTROLLERS_REPO | awk '{print $2}')
 DEFAULT_CONTROLLERS_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep CONTROLLERS_REPO | awk '{print $3}')
 DEFAULT_VISUALIZER_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep VISUALIZER_REPO | awk '{print $2}')
+DEFAULT_VISUALIZER_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep VISUALIZER_REPO | awk '{print $3}')
 DEFAULT_VISUALIZER_ENABLED=$(cat $DEFAULTS_FILE 2>/dev/null | grep VISUALIZER_ENABLED | awk '{print $2}')
 OS_VERSION=$(lsb_release -r -s)
 VPNMODE=$(cat $OVERRIDES_FILE 2>/dev/null | grep MODE | awk '{print $2}')
@@ -451,31 +453,40 @@ function ipop-kill
 
 function visualizer-start
 {
-    echo -e "\e[1;31mEnter visualizer github URL(default: $DEFAULT_VISUALIZER_REPO) \e[0m"
-    read githuburl_visualizer
-    if [ -z "$githuburl_visualizer"]; then
-        githuburl_visualizer=$DEFAULT_VISUALIZER_REPO
+    if ! [ -z $1 ]; then
+        visualizer_repo=$1
+    else
+        visualizer_repo=$DEFAULT_VISUALIZER_REPO
     fi
-    git clone $githuburl_visualizer
-    cd IPOPNetVisualizer
+    if ! [ -z $2 ]; then
+        visualizer_branch=$2
+    else
+        visualizer_branch=$DEFAULT_VISUALIZER_BRANCH
+    fi
 
-    echo -e "\e[1;31mDo you want to continue using master branch(Y/N):\e[0m"
-    read user_input
-    if [[ $user_input =~ [Nn](o)* ]]; then
-       echo -e "Enter git repo branch name:"
-       read github_branch
-       git checkout $github_branch
+    if ! [ -e $VISUALIZER ]; then
+        if [ -z "$visualizer_repo" ]; then
+            echo -e "\e[1;31mEnter visualizer github URL\e[0m"
+            read visualizer_repo
+        fi
+        git clone $visualizer_repo
+        if [ -z "$visualizer_branch" ]; then
+           echo -e "Enter git repo branch name:"
+           read visualizer_branch
+        fi
+        cd $VISUALIZER
+        git checkout $visualizer_branch
+        # Use visualizer setup script
+        cd Setup
+        ./setup.sh
+        cd ../..
     fi
-    chmod +x setup_visualizer.sh
-    ./setup_visualizer.sh
-    cd ..
+    cd $VISUALIZER && ./visualizer start && cd ..
 }
 
 function visualizer-stop
 {
-    ps aux | grep "centVis.py" | awk '{print $2}' | xargs sudo kill -9
-    ps aux | grep "aggr.py" | awk '{print $2}' | xargs sudo kill -9
-    rm -rf ./IPOPNetVisualizer
+    cd $VISUALIZER && ./visualizer stop && cd ..
 }
 
 function visualizer-status
@@ -626,7 +637,7 @@ if [[ -z $@ ]] ; then
         ;;
         ("containers-update")
             containers-update
-        ;;        
+        ;;
         ("ipop-run")
             ipop-run
         ;;
