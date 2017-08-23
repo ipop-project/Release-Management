@@ -477,22 +477,20 @@ function visualizer-start
         cd $VISUALIZER
         git checkout $visualizer_branch
         # Use visualizer setup script
-        cd Setup
-        ./setup.sh
-        cd ../..
+        cd Setup && ./setup.sh && cd ../..
     fi
-    cd $VISUALIZER && ./visualizer start && cd ..
+    cd $VISUALIZER && ./visualizer start && cd .. && echo "Visualizer started"
 }
 
 function visualizer-stop
 {
-    cd $VISUALIZER && ./visualizer stop && cd ..
+    cd $VISUALIZER && ./visualizer stop && cd .. && echo "Visualizer stopped"
 }
 
 function visualizer-status
 {
-    visualizer_aggr=$(ps aux | grep "[a]ggr")
-    visualizer_cent=$(ps aux | grep "[c]entVis")
+    visualizer_aggr=$(ps aux | grep "[C]ollector")
+    visualizer_cent=$(ps aux | grep "[C]entralVisualizer")
 
     if [ -n "$visualizer_aggr" -a -n "$visualizer_cent" ] ; then
            echo 'Visualizer is UP'
