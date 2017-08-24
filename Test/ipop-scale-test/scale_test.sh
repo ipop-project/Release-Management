@@ -251,12 +251,15 @@ function containers-create
     if [ -z "$visualizer_enabled" ]; then
         echo -e "\e[1;31mEnable visualization? (Y/N): \e[0m"
         read visualizer_enabled
-    fi
-    if [[ "$visualizer_enabled" =~ [Yy](es)* ]]; then
-        isvisual=true
+        if [[ "$visualizer_enabled" =~ [Yy](es)* ]]; then
+            isvisual=true
+        else
+            isvisual=false
+        fi
     else
-        isvisual=false
+        isvisual=$visualizer_enabled
     fi
+
 
     topology_param="4 4 0 4"
     if [[ ! ( "$is_external" = true ) ]]; then
