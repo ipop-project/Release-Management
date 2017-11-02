@@ -23,9 +23,7 @@ case $1 in
         BaseTopologyManager_num_chords=$7
         BaseTopologyManager_num_on_demand=$8
         BaseTopologyManager_num_inbound=$9
-        turn_host=$serv_addr
-        turn_user=${10}
-        turn_password=${11}
+        TURN_host="${10}:3478"
         echo -e \
             "{"\
                 "\n  \"CFx\": {"\
@@ -52,9 +50,9 @@ case $1 in
                 "\n     }],"\
 		"\n     \"Stun\": [\"stun.l.google.com:19302\"],"\
                 "\n     \"Turn\": [{"\
-                "\n        \"Address\": \"$turn_host:19302\","\
-                "\n        \"User\": \"$turn_user\","\
-                "\n        \"Password\": \"$turn_password\""\
+                "\n        \"Address\": \"$TURN_host\","\
+                "\n        \"User\": \"user\","\
+                "\n        \"Password\": \"password\""\
                 "\n     }]"\
                 "\n  },"\
                 "\n  \"XmppClient\": {"\
@@ -88,8 +86,8 @@ case $1 in
     ("run")
             mkdir -p logs
             sudo chmod 0666 /dev/net/tun
-            nohup ./ipop-tincan &> ./logs/ctrl_start.log &
-            nohup python -m controller.Controller -c ./ipop-config.json &> ./logs/tin_start.log &
+            nohup ./ipop-tincan &> ./logs/tin_start.log &
+            nohup python -m controller.Controller -c ./ipop-config.json &> ./logs/ctrl_start.log &
         ;;
     ("kill")
             ps aux | grep "ipop-tincan" | awk '{print $2}' | xargs sudo kill -9

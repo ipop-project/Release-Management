@@ -20,7 +20,7 @@ Note: Current version only tested on Ubuntu 16.04 VM
 
 #### Testing Environment
 *  `logs` aggregates controller and tincan logs on host machine under logs directory along with a file with information on the status of each lxc container
-* `ipop-test` begins a ipop scale testing shell to carry out connectivity and performance testing built on tools such as iperf and ping (Currently only for group-vpn testing between lxc-containers). Once in the interactive shell type `help` for more information about the commands available.
+* `ipop-tests` begins a ipop scale testing shell to carry out connectivity and performance testing built on tools such as iperf and ping (Currently only for group-vpn testing between lxc-containers). Once in the interactive shell type `help` for more information about the commands available.
 #### Tear Down
 * Run `containers-del` (Destroy all lxc node labeled containers)
 * Run `visualizer-stop` (Stop visualizer processes)

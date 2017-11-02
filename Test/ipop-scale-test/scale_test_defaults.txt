@@ -1,5 +1,5 @@
-LXC_PACKAGES  'python psmisc iperf iperf3'
-LXC_CONFIG '/var/lib/lxc/default/config'
+LXC_PACKAGES  python psmisc iperf iperf3
+LXC_CONFIG /var/lib/lxc/default/config
 TINCAN_REPO https://github.com/ipop-project/Tincan master
 CONTROLLERS_REPO https://github.com/ipop-project/Controllers master
 VISUALIZER_REPO https://github.com/ipop-project/Network-Visualizer master

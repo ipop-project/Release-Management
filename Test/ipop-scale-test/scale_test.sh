@@ -8,7 +8,7 @@ OVERRIDES_FILE="./auto_config_scale.txt"
 TINCAN="./ipop-tincan"
 CONTROLLER="./Controllers"
 VISUALIZER="./Network-Visualizer"
-DEFAULT_LXC_PACKAGES=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_PACKAGES | awk '{print $2}')
+DEFAULT_LXC_PACKAGES=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_PACKAGES | cut -d ' ' -f 1 --complement)
 DEFAULT_LXC_CONFIG=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_CONFIG | awk '{print $2}')
 DEFAULT_TINCAN_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk '{print $2}')
 DEFAULT_TINCAN_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk '{print $3}')
@@ -24,10 +24,6 @@ max=$(cat $OVERRIDES_FILE 2>/dev/null | grep MAX | awk '{print $2}')
 NET_TEST=$(ip route get 8.8.8.8)
 NET_DEV=$(echo $NET_TEST | awk '{print $5}')
 NET_IP4=$(echo $NET_TEST | awk '{print $7}')
-TURN_USERS="/etc/turnserver/turnusers.txt"
-TURN_ROOT_CONFIG="/etc/turnserver/turnserver.conf"
-TURN_CONFIG="./config/turnserver.conf"
-
 
 function help()
 {
@@ -57,29 +53,36 @@ function options
     echo $user_input
 }
 
-function configure
+function setup-python
 {
-    # if argument is true mongodb and ejabberd won't be installed
-    is_external=$1
-
     #Python dependencies for visualizer and ipop python tests
     sudo apt-get install -y python python-pip python-lxc
-
     sudo pip install --upgrade pip
-    sudo pip install pymongo
+    sudo pip install pymongo sleekxmpp psutil
+}
 
+function setup-mongo
+{
     if [[  ! ( "$is_external" = true ) ]]; then
         #Install and start mongodb for use ipop python tests
         sudo apt-get -y install mongodb
     fi
+}
 
-    #Prepare Tincan for compilation
+function setup-build-deps
+{
+    sudo apt install -y software-properties-common git make libssl-dev g++-4.9
+    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 10
+}
+
+function setup-base-container
+{
+
+    # Install lxc
     sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
     sudo apt-get update -y
-    sudo apt-get -y install lxc g++-4.9
-    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 10
-
-
+    sudo apt-get -y install lxc
+    
     # Install ubuntu OS in the lxc-container
     sudo lxc-create -n default -t ubuntu
     sudo chroot /var/lib/lxc/default/rootfs apt-get -y update
@@ -88,51 +91,31 @@ function configure
 
     # install controller dependencies
     if [ $VPNMODE = "switch" ]; then
-        sudo pip install sleekxmpp pystun psutil
+        sudo pip install sleekxmpp psutil
     else
-        sudo chroot /var/lib/lxc/default/rootfs apt-get -y install 'python-pip'
-        sudo chroot /var/lib/lxc/default/rootfs pip install 'sleekxmpp' pystun psutil
+        sudo chroot /var/lib/lxc/default/rootfs apt-get -y install python-pip
+        sudo chroot /var/lib/lxc/default/rootfs pip install sleekxmpp psutil
     fi
-
-    echo 'lxc.cgroup.devices.allow = c 10:200 rwm' | sudo tee --append $DEFAULT_LXC_CONFIG
-
-    if [[ ! ( "$is_external" = true ) ]]; then
-        # Install turnserver
-        sudo apt-get install -y turnserver
-        echo "containeruser:password:ipopvpn.org:authorized" | sudo tee --append $TURN_USERS
-        # use IP aliasing to bind turnserver to this ipv4 address
-        sudo ifconfig $NET_DEV:0 $NET_IP4 up
-        # prepare turnserver config file
-        sudo cp $TURN_CONFIG $TURN_ROOT_CONFIG
-        sudo sed -i "s/listen_address = .*/listen_address = { \"$NET_IP4\" }/g" $TURN_ROOT_CONFIG
-        sudo systemctl restart turnserver
+    
+    config_grep=$(sudo grep "lxc.cgroup.devices.allow = c 10:200 rwm" "$DEFAULT_LXC_CONFIG")
+    if [ -z "$config_grep" ]; then
+        echo 'lxc.cgroup.devices.allow = c 10:200 rwm' | sudo tee --append $DEFAULT_LXC_CONFIG
     fi
+    
+}
 
-    # configure network
-    sudo iptables --flush
-    read -p "Use symmetric NATS? (Y/n) " use_symmetric_nat
-    if [[ $use_symmetric_nat =~ [Nn]([Oo])* ]]; then
-        # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
-        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
-    else
-        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j MASQUERADE
-    fi
-
-
-    # open TCP ports (for ejabberd)
-    for i in 5222 5269 5280; do
-        sudo iptables -A INPUT -p tcp --dport $i -j ACCEPT
-        sudo iptables -A OUTPUT -p tcp --dport $i -j ACCEPT
-    done
-    # open UDP ports (for STUN and TURN)
-    for i in 3478 19302; do
-        sudo iptables -A INPUT -p udp --sport $i -j ACCEPT
-        sudo iptables -A OUTPUT -p udp --sport $i -j ACCEPT
-    done
-
-    if [[ ! ( "$is_external" = true ) ]]; then
+function setup-ejabberd
+{
+     if [[ ! ( "$is_external" = true ) ]]; then
         # Install local ejabberd server
         sudo apt-get -y install ejabberd
+        echo "ejabberd has been installed!"
+        echo "Copying apparmor profile for ejabberdctl..."
+        sudo cp ./config/usr.sbin.ejabberdctl /etc/apparmor.d/usr.sbin.ejabberdctl
+        echo "Reloading apparmor profile for ejabberd..."
+        sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.ejabberdctl
+        echo "Done!"
+
         # prepare ejabberd server config file
         # restart ejabberd service
         if [ $OS_VERSION = '14.04' ]; then
@@ -150,6 +133,146 @@ function configure
     fi
 }
 
+function setup-network
+{
+    # configure network
+    sudo iptables --flush
+    read -p "Use symmetric NATS? (Y/n) " use_symmetric_nat
+    if [[ $use_symmetric_nat =~ [Nn]([Oo])* ]]; then
+        # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
+        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
+    else
+        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j MASQUERADE
+    fi
+
+    # open TCP ports (for ejabberd)
+    for i in 5222 5269 5280; do
+        sudo iptables -A INPUT -p tcp --dport $i -j ACCEPT
+        sudo iptables -A OUTPUT -p tcp --dport $i -j ACCEPT
+    done
+    # open UDP ports (for STUN and TURN)
+    for i in 3478 19302; do
+        sudo iptables -A INPUT -p udp --sport $i -j ACCEPT
+        sudo iptables -A OUTPUT -p udp --sport $i -j ACCEPT
+    done
+}
+
+function setup-visualizer
+{
+    if ! [ -z $1 ]; then
+        visualizer_repo=$1
+    else
+        visualizer_repo=$DEFAULT_VISUALIZER_REPO
+    fi
+    if ! [ -z $2 ]; then
+        visualizer_branch=$2
+    else
+        visualizer_branch=$DEFAULT_VISUALIZER_BRANCH
+    fi
+
+    if ! [ -e $VISUALIZER ]; then
+        if [ -z "$visualizer_repo" ]; then
+            echo -e "\e[1;31mEnter visualizer github URL\e[0m"
+            read visualizer_repo
+        fi
+        git clone $visualizer_repo
+        if [ -z "$visualizer_branch" ]; then
+           echo -e "Enter git repo branch name:"
+           read visualizer_branch
+        fi
+        cd $VISUALIZER
+        git checkout $visualizer_branch
+        # Use visualizer setup script
+        cd Setup && ./setup.sh && cd ../..
+    fi
+}
+
+function setup-tincan
+{
+    if [ -e $TINCAN ]; then
+        echo "Using existing Tincan binary..."
+    else
+        if ! [ -e "./Tincan/trunk/build/" ]; then
+            if [ -z "$DEFAULT_TINCAN_REPO" ]; then
+                echo -e "\e[1;31mEnter github URL for Tincan\e[0m"
+                read DEFAULT_TINCAN_REPO
+                if [ -z "$DEFAULT_TINCAN_REPO" ] ; then
+                    error "A Tincan repo URL is required"
+                fi
+            fi
+            git clone $DEFAULT_TINCAN_REPO
+            if [ -z $DEFAULT_TINCAN_BRANCH ]; then
+                echo -e "Enter git repo branch name:"
+                read DEFAULT_TINCAN_BRANCH
+            fi
+            cd Tincan
+            git checkout $DEFAULT_TINCAN_BRANCH
+            cd ..
+        fi
+        cd ./Tincan/trunk/build/
+        echo "Building Tincan binary"
+        make
+        cd ../../..
+        cp ./Tincan/trunk/out/release/x64/ipop-tincan .
+    fi
+}
+
+function setup-controller
+{
+    if ! [ -e $CONTROLLER ]; then
+        if [ -z "$DEFAULT_CONTROLLERS_REPO" ]; then
+            echo -e "\e[1;31mEnter IPOP Controller github URL\e[0m"
+            read DEFAULT_CONTROLLERS_REPO
+            if [ -z "$DEFAULT_CONTROLLERS_REPO" ]; then
+                error "A controller repo URL is required"
+            fi
+        fi
+        git clone $DEFAULT_CONTROLLERS_REPO
+        if [ -z $DEFAULT_CONTROLLERS_BRANCH ]; then
+                echo -e "Enter git repo branch name:"
+                read DEFAULT_CONTROLLERS_BRANCH
+        fi
+        cd Controllers
+        git checkout $DEFAULT_CONTROLLERS_BRANCH
+        cd ..
+    else
+        echo "Using existing Controller repo..."
+    fi
+}
+
+function configure
+{
+    # if argument is true mongodb and ejabberd won't be installed
+    is_external=$1
+
+    #Install python dependencies
+    setup-python
+
+    #Install mongodb on current machine
+    setup-mongo
+
+    #Install dependencies required for building tincan
+    setup-build-deps
+
+    #Create default container that will be duplicated to create nodes
+    setup-base-container
+
+    #configure iptables needed for proper network connectivity
+    setup-network
+
+    #Install and setup ejabberd with admin user
+    setup-ejabberd
+
+    #Install and setup net-visualizer
+    setup-visualizer
+
+    # Clone and build Tincan
+    setup-tincan
+
+    # Clone Controller
+    setup-controller
+}
+
 function containers-create
 {
     # obtain network device and ip4 address
@@ -164,33 +287,12 @@ function containers-create
         container_count=$1
     fi
     if ! [ -z $2 ]; then
-        controller_repo_url=$2
-    else
-        controller_repo_url=$DEFAULT_CONTROLLERS_REPO
-    fi
-    if ! [ -z $3 ]; then
-        controller_branch=$3
-    else
-        controller_branch=$DEFAULT_CONTROLLERS_BRANCH
-    fi
-    if ! [ -z $4 ]; then
-        tincan_repo_url=$4
-    else
-        tincan_repo_url=$DEFAULT_TINCAN_REPO
-    fi
-
-    if ! [ -z $5 ]; then
-        tincan_branch=$5
-    else
-        tincan_branch=$DEFAULT_TINCAN_BRANCH
-    fi
-    if ! [ -z $6 ]; then
-        visualizer_enabled=$6
+        visualizer_enabled=$2
     else
         visualizer_enabled=$DEFAULT_VISUALIZER_ENABLED
     fi
-    if ! [ -z $7 ]; then
-        is_external=$7
+    if ! [ -z $3 ]; then
+        is_external=$3
     fi
 
     if [ -z "$container_count" ]; then
@@ -203,50 +305,6 @@ function containers-create
     echo $MODELINE >> $OVERRIDES_FILE
 
 
-    if ! [ -e $CONTROLLER ]; then
-        if [ -z "$controller_repo_url" ]; then
-            echo -e "\e[1;31mEnter IPOP Controller github URL\e[0m"
-            read controller_repo_url
-            if [ -z "$controller_repo_url" ]; then
-                error "A controller repo URL is required"
-            fi
-        fi
-        git clone $controller_repo_url
-        if [ -z $controller_branch ]; then
-                echo -e "Enter git repo branch name:"
-                read controller_branch
-        fi
-        cd Controllers
-        git checkout $controller_branch
-        cd ..
-    fi
-
-    if [ -e $TINCAN ]; then
-        echo "Using existing Tincan binary..."
-    else
-        if ! [ -e "./Tincan/trunk/build/" ]; then
-            if [ -z "$tincan_repo_url" ]; then
-                echo -e "\e[1;31mEnter github URL for Tincan (default: $DEFAULT_TINCAN_REPO) \e[0m"
-                read tincan_repo_url
-                if [ -z "$tincan_repo_url" ] ; then
-                    error "A Tincan repo URL is required"
-                fi
-            fi
-            git clone $tincan_repo_url
-            if [ -z $tincan_branch ]; then
-            echo -e "Enter git repo branch name:"
-                read tincan_branch
-            fi
-            cd Tincan
-            git checkout $tincan_branch
-            cd ..
-        fi
-        cd ./Tincan/trunk/build/
-        echo "Building Tincan binary"
-        make
-        cd ../../..
-        cp ./Tincan/trunk/out/release/x64/ipop-tincan .
-    fi
 
     if [ -z "$visualizer_enabled" ]; then
         echo -e "\e[1;31mEnable visualization? (Y/N): \e[0m"
@@ -297,10 +355,10 @@ function containers-create
         sudo cp -r ./Controllers/controller/ ./
 
         if [[ ! ( "$is_external" = true ) ]]; then
-            sudo ./node/node_config.sh config 1 GroupVPN $NET_IP4 $isvisual $topology_param containeruser password
+            sudo ./node/node_config.sh config 1 GroupVPN $NET_IP4 $isvisual $topology_param
             sudo ejabberdctl register "node1" ejabberd password
         else
-            sudo ./node/node_config.sh config 2 GroupVPN $NET_IP4 $isvisual $topology_param containeruser password
+            sudo ./node/node_config.sh config 2 GroupVPN $NET_IP4 $isvisual $topology_param
             sudo ejabberdctl register "node2" ejabberd password
         fi
 
@@ -311,6 +369,7 @@ function containers-create
             "
         done
     else
+        lxc_bridge_address="10.0.3.1"
         for i in $(seq $min $max); do
             sudo bash -c "
             lxc-copy -n default -N node$i;
@@ -321,7 +380,7 @@ function containers-create
             sudo cp ./ipop-tincan "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo cp './node/node_config.sh' "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo lxc-attach -n node$i -- bash -c "sudo chmod +x $IPOP_TINCAN; sudo chmod +x $IPOP_HOME/node_config.sh;"
-            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param containeruser password"
+            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param $lxc_bridge_address"
             echo "Container node$i started."
             sudo ejabberdctl register "node$i" ejabberd password
             for j in $(seq $min $max); do
@@ -456,32 +515,6 @@ function ipop-kill
 
 function visualizer-start
 {
-    if ! [ -z $1 ]; then
-        visualizer_repo=$1
-    else
-        visualizer_repo=$DEFAULT_VISUALIZER_REPO
-    fi
-    if ! [ -z $2 ]; then
-        visualizer_branch=$2
-    else
-        visualizer_branch=$DEFAULT_VISUALIZER_BRANCH
-    fi
-
-    if ! [ -e $VISUALIZER ]; then
-        if [ -z "$visualizer_repo" ]; then
-            echo -e "\e[1;31mEnter visualizer github URL\e[0m"
-            read visualizer_repo
-        fi
-        git clone $visualizer_repo
-        if [ -z "$visualizer_branch" ]; then
-           echo -e "Enter git repo branch name:"
-           read visualizer_branch
-        fi
-        cd $VISUALIZER
-        git checkout $visualizer_branch
-        # Use visualizer setup script
-        cd Setup && ./setup.sh && cd ../..
-    fi
     cd $VISUALIZER && ./visualizer start && cd .. && echo "Visualizer started"
 }
 

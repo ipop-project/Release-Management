@@ -151,6 +151,7 @@ listen:
     port: 3478
     transport: udp
     module: ejabberd_stun
+    use_turn: true
 
   ##
   ## To handle XML-RPC requests that provide admin credentials:
