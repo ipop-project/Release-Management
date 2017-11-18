@@ -23,7 +23,7 @@ case $1 in
         BaseTopologyManager_num_chords=$7
         BaseTopologyManager_num_on_demand=$8
         BaseTopologyManager_num_inbound=$9
-        TURN_host="${10}:3478"
+        TURN_host="$serv_addr:3478"
         echo -e \
             "{"\
                 "\n  \"CFx\": {"\

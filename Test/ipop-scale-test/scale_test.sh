@@ -34,8 +34,8 @@ function help()
     containers-start               : start stopped containers
     containers-stop                : stop containers
     containers-del                 : delete containers
-    ipop-run                       : to run IPOP node
-    ipop-kill                      : to kill IPOP node
+    ipop-start                     : to start IPOP processes
+    ipop-stop                      : to stop IPOP processes
     ipop-tests                     : open scale test shell to test ipop
     ipop-status                    : show statuses of IPOP processes
     visualizer-start               : install and start up visualizer
@@ -136,13 +136,13 @@ function setup-ejabberd
 function setup-network
 {
     # configure network
-    sudo iptables --flush
+    #sudo iptables --flush
     read -p "Use symmetric NATS? (Y/n) " use_symmetric_nat
     if [[ $use_symmetric_nat =~ [Nn]([Oo])* ]]; then
         # replace symmetric NATs (MASQUERAGE) with full-cone NATs (SNAT)
         sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j SNAT --to-source $NET_IP4
-    else
-        sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j MASQUERADE
+    #else
+    #    sudo iptables -t nat -A POSTROUTING -o $NET_DEV -j MASQUERADE
     fi
 
     # open TCP ports (for ejabberd)
@@ -445,7 +445,7 @@ function containers-update
     done
 }
 
-function ipop-run
+function ipop-start
 {
    container_to_run=$1
 
@@ -484,7 +484,7 @@ function ipop-run
     fi
 }
 
-function ipop-kill
+function ipop-stop
 {
     container_to_kill=$1
     # kill IPOP tincan and controller
@@ -672,11 +672,11 @@ if [[ -z $@ ]] ; then
         ("containers-update")
             containers-update
         ;;
-        ("ipop-run")
-            ipop-run
+        ("ipop-start")
+            ipop-start
         ;;
-        ("ipop-kill")
-            ipop-kill
+        ("ipop-stop")
+            ipop-stop
         ;;
         ("ipop-status")
             ipop-status
