@@ -91,10 +91,10 @@ function setup-base-container
 
     # install controller dependencies
     if [ $VPNMODE = "switch" ]; then
-        sudo pip install sleekxmpp psutil
+        sudo pip install sleekxmpp psutil requests
     else
         sudo chroot /var/lib/lxc/default/rootfs apt-get -y install python-pip
-        sudo chroot /var/lib/lxc/default/rootfs pip install sleekxmpp psutil
+        sudo chroot /var/lib/lxc/default/rootfs pip install sleekxmpp psutil requests
     fi
     
     config_grep=$(sudo grep "lxc.cgroup.devices.allow = c 10:200 rwm" "$DEFAULT_LXC_CONFIG")
@@ -183,7 +183,7 @@ function setup-visualizer
         cd $VISUALIZER
         git checkout $visualizer_branch
         # Use visualizer setup script
-        cd Setup && ./setup.sh && cd ../..
+        cd setup && ./setup.sh && cd ../..
     fi
 }
 
@@ -525,10 +525,9 @@ function visualizer-stop
 
 function visualizer-status
 {
-    visualizer_aggr=$(ps aux | grep "[C]ollector")
-    visualizer_cent=$(ps aux | grep "[C]entralVisualizer")
+    visualizer_ps_result=$(ps aux | grep "[D]eploymentServer")
 
-    if [ -n "$visualizer_aggr" -a -n "$visualizer_cent" ] ; then
+    if [ -n "$visualizer_ps_result" ] ; then
            echo 'Visualizer is UP'
     else
            echo 'Visualizer is Down'
