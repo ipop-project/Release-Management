@@ -253,7 +253,7 @@ def ping_and_parse(sender, sender_name, receiver_name, packet_count):
     return format_ping(ping_output, sender_name, receiver_name)
 
 def parse_ping(ping_lines):
-    ping_lines = ping_lines.split('\n')
+    ping_lines = ping_lines.decode("utf-8").split("\n")
     stats = ping_lines[-3:]
     xsi = [i for i, line in enumerate(stats) if "packet loss" in line]
     xmit_stats = stats[xsi[0]].split(",")

@@ -12,6 +12,8 @@ DEFAULT_LXC_PACKAGES=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_PACKAGES | cut 
 DEFAULT_LXC_CONFIG=$(cat $DEFAULTS_FILE 2>/dev/null | grep LXC_CONFIG | awk '{print $2}')
 DEFAULT_TINCAN_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk '{print $2}')
 DEFAULT_TINCAN_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep TINCAN_REPO | awk '{print $3}')
+DEFAULT_3RD_PARTY_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep 3RD_PARTY_REPO | awk '{print $2}')
+DEFAULT_3RD_PARTY_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep 3RD_PARTY_REPO | awk '{print $3}')
 DEFAULT_CONTROLLERS_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep CONTROLLERS_REPO | awk '{print $2}')
 DEFAULT_CONTROLLERS_BRANCH=$(cat $DEFAULTS_FILE 2>/dev/null | grep CONTROLLERS_REPO | awk '{print $3}')
 DEFAULT_VISUALIZER_REPO=$(cat $DEFAULTS_FILE 2>/dev/null | grep VISUALIZER_REPO | awk '{print $2}')
@@ -28,7 +30,8 @@ NET_IP4=$(echo $NET_TEST | awk '{print $7}')
 function help()
 {
     echo 'Enter from the following options:
-    configure                      : install/prepare default container
+    install-support-serv           : install critical services used in both, classic and switch modes
+    prep-def-container             : prepare default container (what goes in depends on the mode)
     containers-create              : create and start containers
     containers-update              : restart containers adding IPOP src changes
     containers-start               : start stopped containers
@@ -56,17 +59,14 @@ function options
 function setup-python
 {
     #Python dependencies for visualizer and ipop python tests
-    sudo apt-get install -y python python-pip python-lxc
-    sudo pip install --upgrade pip
-    sudo pip install pymongo sleekxmpp psutil
+    sudo apt-get install -y python3 python3-pip python3-lxc
+    sudo pip3 install --upgrade pip
+    sudo pip3 install pymongo sleekxmpp psutil
 }
 
 function setup-mongo
 {
-    if [[  ! ( "$is_external" = true ) ]]; then
-        #Install and start mongodb for use ipop python tests
-        sudo apt-get -y install mongodb
-    fi
+    sudo apt-get -y install mongodb
 }
 
 function setup-build-deps
@@ -82,55 +82,60 @@ function setup-base-container
     sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
     sudo apt-get update -y
     sudo apt-get -y install lxc
-    
+
     # Install ubuntu OS in the lxc-container
     sudo lxc-create -n default -t ubuntu
     sudo chroot /var/lib/lxc/default/rootfs apt-get -y update
     sudo chroot /var/lib/lxc/default/rootfs apt-get -y install $DEFAULT_LXC_PACKAGES
-    sudo chroot /var/lib/lxc/default/rootfs apt-get -y install software-properties-common python-software-properties
+    sudo chroot /var/lib/lxc/default/rootfs apt-get -y install software-properties-common python3-software-properties
 
     # install controller dependencies
     if [ $VPNMODE = "switch" ]; then
-        sudo pip install sleekxmpp psutil requests
+        sudo pip3 install sleekxmpp psutil requests
     else
-        sudo chroot /var/lib/lxc/default/rootfs apt-get -y install python-pip
-        sudo chroot /var/lib/lxc/default/rootfs pip install sleekxmpp psutil requests
+        sudo chroot /var/lib/lxc/default/rootfs apt-get -y install python3-pip
+        sudo chroot /var/lib/lxc/default/rootfs pip3 install sleekxmpp psutil requests
     fi
-    
+
     config_grep=$(sudo grep "lxc.cgroup.devices.allow = c 10:200 rwm" "$DEFAULT_LXC_CONFIG")
     if [ -z "$config_grep" ]; then
         echo 'lxc.cgroup.devices.allow = c 10:200 rwm' | sudo tee --append $DEFAULT_LXC_CONFIG
     fi
-    
+
 }
 
 function setup-ejabberd
 {
-     if [[ ! ( "$is_external" = true ) ]]; then
-        # Install local ejabberd server
-        sudo apt-get -y install ejabberd
-        echo "ejabberd has been installed!"
+    # Install local ejabberd server
+    sudo apt-get -y install ejabberd
+    echo "ejabberd has been installed!"
+    echo "IMPORTANT!!! Please note that the default configuration file for ejabberd has an issue with
+    a memory permission which prevents it from starting up successfully. Do you wish to replace the existing
+    configuration file with the one we recommend? This will overwrite ALL your changes (if you have made any)."
+
+    read -p "Replace ejabberd config with recommended one? [n] " replace_ejabberd_config
+    if [[ $replace_ejabberd_config =~ [Yy](es)* ]]; then
         echo "Copying apparmor profile for ejabberdctl..."
         sudo cp ./config/usr.sbin.ejabberdctl /etc/apparmor.d/usr.sbin.ejabberdctl
         echo "Reloading apparmor profile for ejabberd..."
         sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.ejabberdctl
         echo "Done!"
-
-        # prepare ejabberd server config file
-        # restart ejabberd service
-        if [ $OS_VERSION = '14.04' ]; then
-            sudo cp ./config/ejabberd.cfg /etc/ejabberd/ejabberd.cfg
-            sudo ejabberdctl restart
-        else
-            sudo apt-get -y install erlang-p1-stun
-            sudo cp ./config/ejabberd.yml /etc/ejabberd/ejabberd.yml
-            sudo systemctl restart ejabberd.service
-        fi
-        # Wait for ejabberd service to start
-        sleep 15
-        # Create admin user
-        sudo ejabberdctl register admin ejabberd password
     fi
+
+    # prepare ejabberd server config file
+    # restart ejabberd service
+    if [ $OS_VERSION = '14.04' ]; then
+        sudo cp ./config/ejabberd.cfg /etc/ejabberd/ejabberd.cfg
+        sudo ejabberdctl restart
+    else
+        sudo apt-get -y install erlang-p1-stun
+        sudo cp ./config/ejabberd.yml /etc/ejabberd/ejabberd.yml
+        sudo systemctl restart ejabberd.service
+    fi
+    # Wait for ejabberd service to start
+    sleep 15
+    # Create admin user
+    sudo ejabberdctl register admin ejabberd password
 }
 
 function setup-network
@@ -200,7 +205,7 @@ function setup-tincan
                     error "A Tincan repo URL is required"
                 fi
             fi
-            git clone $DEFAULT_TINCAN_REPO
+            git clone $DEFAULT_TINCAN_REPO Tincan
             if [ -z $DEFAULT_TINCAN_BRANCH ]; then
                 echo -e "Enter git repo branch name:"
                 read DEFAULT_TINCAN_BRANCH
@@ -209,11 +214,27 @@ function setup-tincan
             git checkout $DEFAULT_TINCAN_BRANCH
             cd ..
         fi
-        cd ./Tincan/trunk/build/
+
+        # Set up 3rd party dependencies for Ubuntu
+        cd ./Tincan/external
+        if [ -z "$DEFAULT_3RD_PARTY_REPO" ]; then
+            echo -e "\e[1;31mEnter github URL for 3rd party Tincan dependencies\e[0m"
+            read DEFAULT_3RD_PARTY_REPO
+            if [ -z "$DEFAULT_3RD_PARTY_REPO" ] ; then
+                error "A 3rd party dependencies repo URL is required"
+            fi
+        fi
+        if [ -z $DEFAULT_3RD_PARTY_BRANCH ]; then
+            echo -e "Enter 3rd party dependencies repo branch name:"
+            read DEFAULT_3RD_PARTY_BRANCH
+        fi
+        git clone -b $DEFAULT_3RD_PARTY_BRANCH --single-branch $DEFAULT_3RD_PARTY_REPO
+
+        cd ../trunk/build/
         echo "Building Tincan binary"
         make
         cd ../../..
-        cp ./Tincan/trunk/out/release/x64/ipop-tincan .
+        cp ./Tincan/trunk/out/release/x86_64/ipop-tincan .
     fi
 }
 
@@ -240,22 +261,11 @@ function setup-controller
     fi
 }
 
-function configure
+function install-support-serv
 {
-    # if argument is true mongodb and ejabberd won't be installed
-    is_external=$1
-
-    #Install python dependencies
     setup-python
 
-    #Install mongodb on current machine
     setup-mongo
-
-    #Install dependencies required for building tincan
-    setup-build-deps
-
-    #Create default container that will be duplicated to create nodes
-    setup-base-container
 
     #configure iptables needed for proper network connectivity
     setup-network
@@ -263,14 +273,36 @@ function configure
     #Install and setup ejabberd with admin user
     setup-ejabberd
 
-    #Install and setup net-visualizer
     setup-visualizer
+
+    # In switch mode, this node needs to run the vswitch
+    if [[ "$VPNMODE" = "switch" ]]; then
+        sudo apt-get install -y openvswitch-switch
+    fi
+}
+
+function prep-def-container
+{
+    # In classic mode, the containers run IPOP to form a vnet
+    # amongst themselves. This machine only hosts the support services
+
+    #Install dependencies required for building tincan
+    setup-build-deps
+
+    # Clone and build Tincan
+    setup-tincan
+
+    #Install dependencies required for building tincan
+    setup-build-deps
 
     # Clone and build Tincan
     setup-tincan
 
     # Clone Controller
     setup-controller
+
+    #Create default container that will be duplicated to create nodes
+    setup-base-container
 }
 
 function containers-create
@@ -290,9 +322,6 @@ function containers-create
         visualizer_enabled=$2
     else
         visualizer_enabled=$DEFAULT_VISUALIZER_ENABLED
-    fi
-    if ! [ -z $3 ]; then
-        is_external=$3
     fi
 
     if [ -z "$container_count" ]; then
@@ -319,31 +348,6 @@ function containers-create
     fi
 
 
-    topology_param="4 4 0 4"
-    if [[ ! ( "$is_external" = true ) ]]; then
-        echo "Network defaults:"
-        echo "No of Successor links: 4"
-        echo "Max No of Chords: 4"
-        echo "Max No of Ondemand links: 0"
-        echo "Max No of Inbound links: 4"
-        echo -e "\e[1;31mDo you want to use IPOP network defaults? (Y/N): \e[0m"
-        read user_input
-        if [[ $user_input =~ [Nn](o)* ]]; then
-            topology_param=""
-            echo -e "\e[1;31mEnter No of Successor Links: \e[0m"
-            read user_input
-            topology_param="$topology_param $user_input"
-            echo -e "\e[1;31mEnter Max No of Chords Links: \e[0m"
-            read user_input
-            topology_param="$topology_param $user_input"
-            echo -e "\e[1;31mEnter Max No of Ondemand Links: \e[0m"
-            read user_input
-            topology_param="$topology_param $user_input"
-            echo -e "\e[1;31mEnter Max No of Inbound Links: \e[0m"
-            read user_input
-            topology_param="$topology_param $user_input"
-        fi
-    fi
     echo -e "\e[1;31mStarting containers. Please wait... \e[0m"
     if [[ "$VPNMODE" = "switch" ]]; then
         sudo mkdir -p /dev/net
@@ -354,13 +358,8 @@ function containers-create
         sudo chmod +x ./node/node_config.sh
         sudo cp -r ./Controllers/controller/ ./
 
-        if [[ ! ( "$is_external" = true ) ]]; then
-            sudo ./node/node_config.sh config 1 GroupVPN $NET_IP4 $isvisual $topology_param
-            sudo ejabberdctl register "node1" ejabberd password
-        else
-            sudo ./node/node_config.sh config 2 GroupVPN $NET_IP4 $isvisual $topology_param
-            sudo ejabberdctl register "node2" ejabberd password
-        fi
+        sudo ./node/node_config.sh config 1 TUNNEL $NET_IP4 $isvisual
+        sudo ejabberdctl register "node1" ejabberd password
 
         for i in $(seq $min $max); do
             sudo bash -c "
@@ -369,6 +368,7 @@ function containers-create
             "
         done
     else
+        # currently unused
         lxc_bridge_address="10.0.3.1"
         for i in $(seq $min $max); do
             sudo bash -c "
@@ -380,7 +380,7 @@ function containers-create
             sudo cp ./ipop-tincan "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo cp './node/node_config.sh' "/var/lib/lxc/node$i/rootfs$IPOP_HOME"
             sudo lxc-attach -n node$i -- bash -c "sudo chmod +x $IPOP_TINCAN; sudo chmod +x $IPOP_HOME/node_config.sh;"
-            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i GroupVPN $NET_IP4 $isvisual $topology_param $lxc_bridge_address"
+            sudo lxc-attach -n node$i -- bash -c "sudo $IPOP_HOME/node_config.sh config $i VNET $NET_IP4 $isvisual $lxc_bridge_address"
             echo "Container node$i started."
             sudo ejabberdctl register "node$i" ejabberd password
             for j in $(seq $min $max); do
@@ -453,8 +453,8 @@ function ipop-start
         echo "Running ipop in switch-mode"
         sudo chmod 0666 /dev/net/tun
         mkdir -p logs/
-        nohup sudo -b ./ipop-tincan &> logs/ctrl.log
-        nohup sudo -b python -m controller.Controller -c ./ipop-config.json &> logs/tincan.log
+        nohup sudo -b ./ipop-tincan &> logs/tincan.log
+        nohup sudo -b python3 -m controller.Controller -c ./node/ipop-config.json &> logs/ctrl.log
     else
         if [[ ! ( -z "$container_to_run" ) ]]; then
             if [ "$container_to_run" = '#' ]; then
@@ -617,7 +617,7 @@ function configure-external-node
 
 function ipop-tests
 {
-    sudo python ipoplxcutils/main.py
+    sudo python3 ipoplxcutils/main.py
 }
 
 function mode
@@ -653,8 +653,11 @@ if [[ -z $@ ]] ; then
     line=($(options))
     cmd=${line[0]}
     case $cmd in
-        ("configure")
-            configure
+        ("install-support-serv")
+            install-support-serv
+        ;;
+        ("prep-def-container")
+            prep-def-container
         ;;
         ("containers-create")
             containers-create

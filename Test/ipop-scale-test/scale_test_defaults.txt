@@ -1,5 +1,6 @@
 LXC_PACKAGES  python psmisc iperf iperf3
 LXC_CONFIG /var/lib/lxc/default/config
+3RD_PARTY_REPO https://github.com/ipop-project/3rd-Party-Libs ubuntu-x64
 TINCAN_REPO https://github.com/ipop-project/Tincan master
 CONTROLLERS_REPO https://github.com/ipop-project/Controllers master
 VISUALIZER_REPO https://github.com/ipop-project/Network-Visualizer master
