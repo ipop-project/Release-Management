@@ -21,7 +21,7 @@ case $1 in
         isVisulizerEnabled=$5
         # available options
         TURN_host="$serv_addr:3478"
-        echo -e \
+        echo -en \
             "{"\
                 "\n  \"CFx\": {"\
                 "\n    \"Model\": \"$ipop_model\","\
@@ -69,9 +69,17 @@ case $1 in
                 "\n    \"Overlays\": {"\
                 "\n      \"$sample_overlay_id\": { "\
                 "\n        \"Type\": \"$ipop_model\","\
+        > $IPOP_CONFIG;
+
+        if [ "$ipop_model" == "VNET" ]; then
+            echo -en \
                 "\n        \"IP4\": \"$Ip4\","\
                 "\n        \"IP4PrefixLen\": $CFx_ip4_mask,"\
                 "\n        \"MTU4\": $CFx_mtu4,"\
+            >> $IPOP_CONFIG;
+        fi
+
+        echo -en \
                 "\n        \"TapName\": \"ipop_tap0\","\
                 "\n        \"IgnoredNetInterfaces\": [\"ipop_tap0\"]"\
                 "\n      } "\
@@ -80,25 +88,33 @@ case $1 in
                 "\n  \"Icc\": {"\
                 "\n    \"Enabled\": true"\
                 "\n  },"\
+        >> $IPOP_CONFIG;
+
+        if [ "$ipop_model" == "VNET" ]; then
+            echo -en \
                 "\n  \"Broadcaster\": {"\
                 "\n    \"Enabled\": true"\
                 "\n  },"\
-                "\n  \"OverlayVisualizer\": {"\
-                "\n    \"Enabled\": $isVisulizerEnabled,"\
-                "\n    \"WebServiceAddress\": \"$Visualizer_CollectorService_addr\","\
-                "\n    \"NodeName\": \"node$ipop_id\""\
-                "\n  }"\
-                "\n}"\
-        > $IPOP_CONFIG
+            >> $IPOP_CONFIG;
+        fi
+
+        echo -en \
+            "\n  \"OverlayVisualizer\": {"\
+            "\n    \"Enabled\": $isVisulizerEnabled,"\
+            "\n    \"WebServiceAddress\": \"$Visualizer_CollectorService_addr\","\
+            "\n    \"NodeName\": \"node$ipop_id\""\
+            "\n  }"\
+            "\n}"\
+            >> $IPOP_CONFIG
         ;;
     ("run")
-            mkdir -p logs
-            sudo chmod 0666 /dev/net/tun
-            nohup ./ipop-tincan &> ./logs/tin_start.log &
-            nohup python3 -m controller.Controller -c ./ipop-config.json &> ./logs/ctrl_start.log &
+        mkdir -p logs
+        sudo chmod 0666 /dev/net/tun
+        nohup ./ipop-tincan &> ./logs/tin_start.log &
+        nohup python3 -m controller.Controller -c ./ipop-config.json &> ./logs/ctrl_start.log &
         ;;
     ("kill")
-            ps aux | grep "ipop-tincan" | awk '{print $2}' | xargs sudo kill -9
-            ps aux | grep "controller.Controller" | awk '{print $2}' | xargs sudo kill -9
+        ps aux | grep "ipop-tincan" | awk '{print $2}' | xargs sudo kill -9
+        ps aux | grep "controller.Controller" | awk '{print $2}' | xargs sudo kill -9
         ;;
 esac
