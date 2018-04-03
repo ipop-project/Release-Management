@@ -46,14 +46,9 @@ function help()
     visualizer-status              : show statuses of visualizer processes
     logs                           : aggregate ipop logs under ./logs
     mode                           : show or change ipop mode to test
+    help                           : show this menu
+    quit                           : quit
     '
-}
-
-
-function options
-{
-    read -p "$(help) `echo $'\n> '`" user_input
-    echo $user_input
 }
 
 function setup-python
@@ -632,20 +627,20 @@ function ipop-tests
 function mode
 {
     action=$1
-    current_vpn_mode=$(cat $HELP_FILE 2>/dev/null | grep MODE | awk '{print $2}')
+    current_vpn_mode=$(cat $OVERRIDES_FILE 2>/dev/null | grep MODE | awk '{print $2}')
     case $action in
         "change")
             if [[ "$current_vpn_mode" == "classic" ]]; then
+                sed -i "s/MODE .*/MODE switch/g" $OVERRIDES_FILE
                 echo "Mode changed to switch."
-                sed -i "s/MODE .*/MODE switch/g" $HELP_FILE
             else
+                sed -i "s/MODE .*/MODE classic/g" $OVERRIDES_FILE
                 echo "Mode changed to classic."
-                sed -i "s/MODE .*/MODE classic/g" $HELP_FILE
             fi
-            ;;
+        ;;
         *)
             echo "Current mode: $current_vpn_mode"
-            ;;
+        ;;
     esac
 }
 
@@ -658,62 +653,93 @@ check-vpn-mode
 
 $@
 
-if [[ -z $@ ]] ; then
-    line=($(options))
-    cmd=${line[0]}
+show_help=true
+while true ; do
+    if "$show_help" = true; then
+        echo "$(help)"
+    fi
+    read -p "`echo $'\n> '`" user_input
+
+    cmd=${user_input[0]}
     case $cmd in
         ("install-support-serv")
             install-support-serv
+            show_help=true
         ;;
         ("prep-def-container")
             prep-def-container
+            show_help=true
         ;;
         ("containers-create")
             containers-create
+            show_help=true
         ;;
         ("containers-start")
             containers-start
+            show_help=false
         ;;
         ("containers-del")
             containers-del
+            show_help=false
         ;;
         ("containers-stop")
             containers-stop
+            show_help=false
         ;;
         ("containers-update")
             containers-update
+            show_help=true
         ;;
         ("ipop-start")
             ipop-start
+            show_help=false
         ;;
         ("ipop-stop")
             ipop-stop
+            show_help=false
         ;;
         ("ipop-status")
             ipop-status
+            show_help=false
         ;;
         ("quit")
             exit 0
         ;;
         ("visualizer-start")
             visualizer-start
+            show_help=false
         ;;
         ("visualizer-stop")
             visualizer-stop
+            show_help=false
         ;;
         ("visualizer-status")
             visualizer-status
+            show_help=false
         ;;
         ("ipop-tests")
             ipop-tests
+            show_help=true
         ;;
         ("logs")
             logs
+            show_help=false
         ;;
         ("mode")
-        mode-options
-        read -p "`echo $'> '`" action
-        mode $action
+            mode-options
+            read -p "`echo $'mode> '`" action
+            mode $action
+            show_help=false
         ;;
+        ("help")
+            help
+            show_help=false
+        ;;
+        *)
+            echo -n "Please input a valid option."
+            show_help=false
+        ;;
+
     esac
-fi
+    user_input=""
+done
