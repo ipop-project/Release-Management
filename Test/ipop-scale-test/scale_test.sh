@@ -448,8 +448,8 @@ function ipop-start
         echo "Running ipop in switch-mode"
         sudo chmod 0666 /dev/net/tun
         mkdir -p logs/
-        nohup sudo -b ./ipop-tincan &> logs/tincan.log
-        nohup sudo -b python3 -m controller.Controller -c ./node/ipop-config.json &> logs/ctrl.log
+        nohup sudo -b ./ipop-tincan &
+        nohup sudo -b python3 -m controller.Controller -c ./node/ipop-config.json &
     else
         if [[ ! ( -z "$container_to_run" ) ]]; then
             if [ "$container_to_run" = '#' ]; then

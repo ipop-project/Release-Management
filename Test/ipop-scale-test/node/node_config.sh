@@ -114,7 +114,7 @@ case $1 in
         nohup python3 -m controller.Controller -c ./ipop-config.json &> ./logs/ctrl_start.log &
         ;;
     ("kill")
-        ps aux | grep "ipop-tincan" | awk '{print $2}' | xargs sudo kill -9
-        ps aux | grep "controller.Controller" | awk '{print $2}' | xargs sudo kill -9
+        ps aux | grep "ipop-tincan" | awk '{print $2}' | xargs sudo kill -s SIGINT
+        ps aux | grep "controller.Controller" | awk '{print $2}' | xargs sudo kill -s SIGINT
         ;;
 esac
