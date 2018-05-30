@@ -1,0 +1,13 @@
+[Unit]
+Description=IPOP-VPN service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ipop-vpn/ipop start
+RemainAfterExit=true
+ExecStop=/opt/ipop-vpn/ipop stop
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+

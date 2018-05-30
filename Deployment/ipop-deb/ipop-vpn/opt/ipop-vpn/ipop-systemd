@@ -1,0 +1,64 @@
+#! /bin/bash
+### BEGIN INIT INFO
+# Provides:          ipop-vpn
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start IPOP Tincan & Controller
+### END INIT INFO
+# /opt/ipop-vpn/ipop {start|stop}
+#
+
+INSTALLATION_DIR=/opt/ipop-vpn
+
+ipop_start() {
+    cd "$INSTALLATION_DIR"
+    touch /tmp/ipop-tincan-pid
+    ./ipop-tincan &
+    echo $! > /tmp/ipop-tincan-pid
+    touch /tmp/ipop-controller-pid
+    source ipop-venv/bin/activate
+    python3 -m controller.Controller -c /etc/ipop-vpn/config.json &
+    echo $! > /tmp/ipop-controller-pid 
+}
+
+ipop_clean_kill() {
+    kill -2 $(head -n 1 /tmp/ipop-tincan-pid)
+    kill -2 $(head -n 1 /tmp/ipop-controller-pid)
+    rm /tmp/ipop-tincan-pid
+    rm /tmp/ipop-controller-pid 
+}
+
+ipop_force_kill() {
+    kill -9 $(head -n 1 /tmp/ipop-tincan-pid)
+    kill -9 $(head -n 1 /tmp/ipop-controller-pid)
+    rm /tmp/ipop-tincan-pid
+    rm /tmp/ipop-controller-pid 
+}
+
+case "$1" in
+  start)
+    ipop_start
+    ;;
+  stop)
+    ipop_clean_kill
+    ;;
+  restart)
+    ipop_clean_kill
+    ipop_start
+    ;;
+  reload)
+    ipop_force_kill
+    ipop_start
+    ;;
+  kill)
+    ipop_force_kill
+    ;;
+  *)
+    echo "Usage: /opt/ipop-vpn/ipop {start | stop | restart | reload}"
+    exit 1
+    ;;
+esac
+
+exit 0
