@@ -13,7 +13,7 @@
 
 5) To install the ipop-vpn software, run the following command in the same directory:
 
-		sudo apt-get install ./ipop-vpn
+		sudo apt-get install ./ipop-vpn.deb
 
 This command places the binary files in the /opt/ipop-vpn and the config file in /etc/ipop-vpn directories. The ipop.service file is placed in the /etc/systemd/system directory.
 
