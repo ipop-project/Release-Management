@@ -3,9 +3,9 @@ Description=IPOP-VPN service
 
 [Service]
 Type=oneshot
-ExecStart=/opt/ipop-vpn/ipop start
+ExecStart=/opt/ipop-vpn/ipop-systemd start
 RemainAfterExit=true
-ExecStop=/opt/ipop-vpn/ipop stop
+ExecStop=/opt/ipop-vpn/ipop-systemd stop
 Restart=no
 
 [Install]

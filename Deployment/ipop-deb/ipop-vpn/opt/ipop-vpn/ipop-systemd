@@ -7,8 +7,9 @@
 # Default-Stop:      0 1 6
 # Short-Description: Start IPOP Tincan & Controller
 ### END INIT INFO
-# /opt/ipop-vpn/ipop {start|stop}
-#
+# /opt/ipop-vpn/ipop-systemd {start|stop|restart}
+# or
+# sudo systemctl {start|stop|restart} ipop
 
 INSTALLATION_DIR=/opt/ipop-vpn
 
@@ -56,7 +57,7 @@ case "$1" in
     ipop_force_kill
     ;;
   *)
-    echo "Usage: /opt/ipop-vpn/ipop {start | stop | restart | reload}"
+    echo "Usage: /opt/ipop-vpn/ipop-systemd {start | stop | restart}"
     exit 1
     ;;
 esac
