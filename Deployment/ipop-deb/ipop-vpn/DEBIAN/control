@@ -1,6 +1,6 @@
 Package: ipop-vpn
-Version: 18.03
+Version: 18.08
 Maintainer: ipop-project
 Architecture: all
 Description: IPOP
-Depends: python3, python3-pip
+Depends: python3, python3-pip, iproute2, openvswitch-switch
