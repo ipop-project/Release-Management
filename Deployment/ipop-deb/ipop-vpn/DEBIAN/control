@@ -1,6 +1,10 @@
 Package: ipop-vpn
-Version: 18.08
-Maintainer: ipop-project
-Architecture: all
-Description: IPOP
-Depends: python3, python3-pip, iproute2, openvswitch-switch
+Name: IPOP-VPN
+Version: 18.08.29
+Maintainer: <ipop@ipop-project.org>
+Architecture: amd64
+Homepage: http://ipop-project.org
+Depends: python3, python3-pip, iproute2, openvswitch-switch, bridge-utils
+Description: Virtual Overlay Networks.
+ IPOP (IP-Over-P2P) is an open-source user-centric software virtual network allowing end users to define and create their own virtual private networks (VPNs). IPOP virtual networks provide end-to-end tunneling of IP or Ethernet over Tincan links setup and managed through a control API to create various software-defined VPN overlays.
+Tag: P2P Overlay Networking
