@@ -15,27 +15,27 @@ INSTALLATION_DIR=/opt/ipop-vpn
 
 ipop_start() {
     cd "$INSTALLATION_DIR"
-    touch /tmp/ipop-tincan-pid
+    touch /run/ipop-vpn/ipop-tincan-pid
     ./ipop-tincan &
-    echo $! > /tmp/ipop-tincan-pid
-    touch /tmp/ipop-controller-pid
+    echo $! > /run/ipop-vpn/ipop-tincan-pid
+    touch /run/ipop-vpn/ipop-controller-pid
     source ipop-venv/bin/activate
     python3 -m controller.Controller -c /etc/opt/ipop-vpn/config.json &
-    echo $! > /tmp/ipop-controller-pid 
+    echo $! > /run/ipop-vpn/ipop-controller-pid 
 }
 
 ipop_stop() {
-    kill -2 $(head -n 1 /tmp/ipop-controller-pid)
-    kill -2 $(head -n 1 /tmp/ipop-tincan-pid)
-    rm /tmp/ipop-tincan-pid
-    rm /tmp/ipop-controller-pid 
+    kill -15 $(head -n 1 /run/ipop-vpn/ipop-controller-pid)
+    kill -15 $(head -n 1 /run/ipop-vpn/ipop-tincan-pid)
+    rm /run/ipop-vpn/ipop-tincan-pid
+    rm /run/ipop-vpn/ipop-controller-pid 
 }
 
 ipop_abort() {
-    kill -9 $(head -n 1 /tmp/ipop-tincan-pid)
-    kill -9 $(head -n 1 /tmp/ipop-controller-pid)
-    rm /tmp/ipop-tincan-pid
-    rm /tmp/ipop-controller-pid 
+    kill -9 $(head -n 1 /run/ipop-vpn/ipop-tincan-pid)
+    kill -9 $(head -n 1 /run/ipop-vpn/ipop-controller-pid)
+    rm /run/ipop-vpn/ipop-tincan-pid
+    rm /run/ipop-vpn/ipop-controller-pid 
 }
 
 case "$1" in
