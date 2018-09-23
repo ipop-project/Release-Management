@@ -1,7 +1,7 @@
 # IPOP-DEBIAN PACKAGE
 
 The IPOP-VPN Debian package installs IPOP as a systemd service and is supported in Ubuntu 18 and Raspbian OS. Use the following procedure to create a new installer package.
-1. Clone the Release-Management repo and use "Release-Management\Deployment\ipop-deb" as your base directory.
+1. Clone the Release-Management repo and use "Release-Management/Deployment/ipop-deb" as your base directory.
 2. Copy the executable ipop-tincan, and the controller folder into "ipop-vpn/etc/ipop-vpn".
 3. Copy "config.json", the template or completed file, into "ipop-vpn/etc/opt/ipop-vpn".
 4. Invoke the command "dpkg-deb --build ipop-vpn" to create the "ipo-vpn.deb" installer package
