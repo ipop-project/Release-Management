@@ -1,31 +1,28 @@
 # IPOP-DEBIAN PACKAGE
 
+The IPOP-VPN Debian package installs IPOP as a systemd service and is supported in Ubuntu 18 and Raspbian OS. Use the following procedure to create a new installer package.
+1. Clone the Release-Management repo and use "Release-Management\Deployment\ipop-deb" as your base directory.
+2. Copy the executable ipop-tincan, and the controller folder into "ipop-vpn/etc/ipop-vpn".
+3. Copy "config.json", the template or completed file, into "ipop-vpn/etc/opt/ipop-vpn".
+4. Invoke the command "dpkg-deb --build ipop-vpn" to create the "ipo-vpn.deb" installer package
 
-1) After generating the Tincan binary, the generated ipop-tincan binary file should be copied into the "ipop-vpn/opt/ipop-vpn" directory.
+By default, the following files and directories are created:
+1. /opt/ipop-vpn/ipop-tincan
+2. /opt/ipop-vpn/controller/
+3. /etc/opt/ipop-vpn/config.json
+4. /etc/systemd/system
+5. /var/logs/ipop-vpn/tincan_log
+6. /var/logs/ipop-vpn/ctrl.log
 
-2) Also, the "controllers" subdirectory under the "Controllers" directory should also be copied into the "ipop-vpn/opt/ipop-vpn" directory.
+The installer has dependencies on, and will install python3, python3-pip, iproute2, openvswitch-switch, bridge-utils.
+To install IPOP-VPN invoke "sudo -H atp isntall -y <path/to/installer>/ipop-vpn.deb"
+After installation but before starting IPOP, complete "config.json" by adding the XMPP credentials.
+Next start IPOP using "sudo systemctl start ipop"
+Additionally, use systectl to start/stop/restart/status ipop.
 
-3) The config file, "config.json", should be copied into the "ipop-vpn/etc/ipop-vpn" directory. The config file should be properly completed before/after copying into the directory.
+IPOP is configured to be started automatically on reboot.
 
-4) Make sure the current directory is "ipop-deb". And then run the following command to build the ipop-vpn debain package:
-
-		dpkg-deb --build ipop-vpn
-
-5) To install the ipop-vpn software, run the following command in the same directory:
-
-		sudo apt-get install ./ipop-vpn.deb
-
-This command places the binary files in the /opt/ipop-vpn and the config file in /etc/ipop-vpn directories. The ipop.service file is placed in the /etc/systemd/system directory.
-
-6) To activate the ipop-systemd daemon service (only for the first time), run the following commands:
-
-		sudo systemctl daemon-reload
-		sudo systemctl enable ipop
-		sudo systemctl start ipop
-
-The ipop service will now run as a daemon in the background. The ipop service will start automatically as a daemon everytime the system is booted.
-
-7) Everytime the binary files or the config file has been changed, the steps from 1-5 should be repeated. And then instead of step 6, do the following command:
-
-		sudo systemctl restart ipop
-
+Known Issues
+The following issues are pending resolution:
+Controller termination routines are not being invoked. Active ports at service shutdown are not removed from the OVS bridge and the bridge will have to be manually removed/pruned of old ports before restart.
+Removing the IPOP-VPN does not delete the /opt/ipop-vpn/ directory as post installed files are still present.
