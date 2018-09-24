@@ -8,5 +8,5 @@ virtualenv ipop-venv
 source ipop-venv/bin/activate
 pip3 install psutil sleekxmpp requests
 deactivate
-sudo systemctl daemon-reload
-sudo systemctl enable ipop
+systemctl daemon-reload
+systemctl enable ipop

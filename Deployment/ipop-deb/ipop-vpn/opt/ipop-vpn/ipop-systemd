@@ -15,6 +15,7 @@ INSTALLATION_DIR=/opt/ipop-vpn
 
 ipop_start() {
     cd "$INSTALLATION_DIR"
+    mkdir -p /run/ipop-vpn/
     touch /run/ipop-vpn/ipop-tincan-pid
     ./ipop-tincan &
     echo $! > /run/ipop-vpn/ipop-tincan-pid
@@ -28,7 +29,8 @@ ipop_stop() {
     kill -15 $(head -n 1 /run/ipop-vpn/ipop-controller-pid)
     kill -15 $(head -n 1 /run/ipop-vpn/ipop-tincan-pid)
     rm /run/ipop-vpn/ipop-tincan-pid
-    rm /run/ipop-vpn/ipop-controller-pid 
+    rm /run/ipop-vpn/ipop-controller-pid
+    rmdir /run/ipop-vpn/
 }
 
 ipop_abort() {
