@@ -7,9 +7,9 @@
 # Default-Stop:      0 1 6
 # Short-Description: Start IPOP Tincan & Controller
 ### END INIT INFO
-# /opt/ipop-vpn/ipop-systemd {start|stop|restart}
+# sudo /opt/ipop-vpn/ipop-systemd {start|stop|restart}
 # or
-# sudo systemctl {start|stop|restart} ipop
+# sudo systemctl {start|stop|restart|abort} ipop
 
 INSTALLATION_DIR=/opt/ipop-vpn
 
@@ -37,7 +37,8 @@ ipop_abort() {
     kill -9 $(head -n 1 /run/ipop-vpn/ipop-tincan-pid)
     kill -9 $(head -n 1 /run/ipop-vpn/ipop-controller-pid)
     rm /run/ipop-vpn/ipop-tincan-pid
-    rm /run/ipop-vpn/ipop-controller-pid 
+    rm /run/ipop-vpn/ipop-controller-pid
+    rmdir /run/ipop-vpn/
 }
 
 case "$1" in
