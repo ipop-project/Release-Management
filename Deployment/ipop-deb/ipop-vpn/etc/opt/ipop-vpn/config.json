@@ -7,7 +7,7 @@
     "Enabled": true,
     "LogLevel": "DEBUG",
     "Device": "File",
-    "Directory": "./logs/",
+    "Directory": "/var/log/ipop-vpn/",
     "CtrlLogFileName": "ctrl.log",
     "TincanLogFileName": "tincan_log",
     "MaxFileSize": 5000000,
@@ -21,10 +21,10 @@
     "Enabled": true,
     "Overlays": {
       "1010001": {
-        "Username": "***",
-        "Password": "***",
-        "HostAddress": "***",        
+        "HostAddress": "",
         "Port": "5222",
+        "Username": "",
+        "Password": "",
         "AuthenticationMethod": "PASSWORD",
         "AcceptUntrustedServer": true
       }
@@ -34,39 +34,45 @@
     "Enabled": true,
     "Overlays": {
       "1010001": {
-        "Name": "IpopOverlay1",
-        "Description": "Tunnel Network",
-        "ManualTopology": false,
-        "EnforcedLinks": []
+        "Name": "Overlay1",
+        "Description": "IPOP v18 testbed"
       }
     }
   },
   "LinkManager": {
     "Enabled": true,
-    "Stun": [ "stun.l.google.com:19302", "stun1.l.google.com:19302" ],
-    "Turn": [
-      {
-        "Address": "***",
-        "User": "***",
-        "Password": "***"
-      }      
-    ],
+    "Stun": ["stun.l.google.com:19302", "stun1.l.google.com:19302"],
     "Overlays": {
       "1010001": {
         "Type": "TUNNEL",
-        "TapName": "ipop"   
+        "TapName": "ipop"
       }
     }
-  }, 
-  "Icc": {
-    "Enabled": false
   },
-  "Broadcaster": {
-    "Enabled": false
+  "BridgeController": {
+    "Enabled": true,
+    "Overlays": {
+      "1010001": {
+        "Type": "OVS",
+        "BridgeName": "ipopbr0",
+        "IP4": "10.10.10.*",
+        "PrefixLen": 24,
+        "MTU": 1410
+      }
+    }
   },
   "OverlayVisualizer": {
     "Enabled": false,
     "TimerInterval": 15,
     "WebServiceAddress": "***:5000"
-  }    
+  },
+  "UsageReport": {
+    "Enabled": true
+  },
+  "Icc": {
+    "Enabled": false
+  },
+  "Broadcaster": {
+    "Enabled": false
+  }
 }
