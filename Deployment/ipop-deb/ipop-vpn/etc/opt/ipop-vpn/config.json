@@ -1,17 +1,18 @@
 {
   "CFx": {
     "Model": "Default",
-    "Overlays": [  "101000F" ]
+    "Overlays": [  "1010001" ]
   },
   "Logger": {
     "Enabled": true,
     "LogLevel": "DEBUG",
     "Device": "File",
-    "Directory": "/var/log/ipop-vpn/",
+    "Directory": "./logs/",
     "CtrlLogFileName": "ctrl.log",
     "TincanLogFileName": "tincan_log",
     "MaxFileSize": 5000000,
-    "MaxArchives": 15
+    "MaxArchives": 5
+  
   },
   "TincanInterface": {
     "Enabled": true
@@ -19,11 +20,11 @@
   "Signal": {
     "Enabled": true,
     "Overlays": {
-      "101000F": {
-        "HostAddress": "xmpp.ipop-project.org",
+      "1010001": {
+        "Username": "***",
+        "Password": "***",
+        "HostAddress": "***",        
         "Port": "5222",
-        "Username": "***01@xmpp.ipop-project.org",
-        "Password": "psswd01",
         "AuthenticationMethod": "PASSWORD",
         "AcceptUntrustedServer": true
       }
@@ -32,54 +33,40 @@
   "Topology": {
     "Enabled": true,
     "Overlays": {
-      "101000F": {
-        "Name": "Beta5Overlay1",
-        "Description": "IPOP v18 test bed"
+      "1010001": {
+        "Name": "IpopOverlay1",
+        "Description": "Tunnel Network",
+        "ManualTopology": false,
+        "EnforcedLinks": []
       }
     }
   },
   "LinkManager": {
     "Enabled": true,
-    "Stun": ["10.244.18.150:3478","stun.l.google.com:19302", "stun1.l.google.com:19302"],
+    "Stun": [ "stun.l.google.com:19302", "stun1.l.google.com:19302" ],
     "Turn": [
       {
-        "Address": "***.org:19302",
+        "Address": "***",
         "User": "***",
         "Password": "***"
-      }
+      }      
     ],
     "Overlays": {
-      "101000F": {
+      "1010001": {
         "Type": "TUNNEL",
-        "TapName": "ipop"
+        "TapName": "ipop"   
       }
     }
-  },
-  "OverlayVisualizer": {
-    "Enabled": false,
-    "TimerInterval": 30,
-    "WebServiceAddress": "*.*.*.*:5000"
-  },
-  "BridgeController": {
-    "Enabled": true,
-    "Overlays": {
-      "101000F": {
-        "Type": "OVS",
-        "BridgeName": "ipopbr0",
-        "IP4": "10.10.100.*",
-        "PrefixLen": 24,
-        "MTU": 1410,
-        "AutoDelete": true
-      }
-    }
-  },
-  "UsageReport": {
-    "Enabled": true
-  },
+  }, 
   "Icc": {
     "Enabled": false
   },
   "Broadcaster": {
     "Enabled": false
-  }
+  },
+  "OverlayVisualizer": {
+    "Enabled": false,
+    "TimerInterval": 15,
+    "WebServiceAddress": "***:5000"
+  }    
 }
