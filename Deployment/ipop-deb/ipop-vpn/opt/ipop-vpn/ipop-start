@@ -1,0 +1,11 @@
+#! /bin/bash
+
+ipop_start() {
+    cd /opt/ipop-vpn
+    ./ipop-tincan &
+    source ipop-venv/bin/activate
+    python3 -m controller.Controller -c /etc/opt/ipop-vpn/config.json &
+}
+
+ipop_start
+exit 0

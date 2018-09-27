@@ -1,0 +1,10 @@
+#!/bin/bash
+
+systemctl -q is-active ipop && systemctl -q stop ipop || true
+systemctl -q is-enabled ipop && systemctl -q disable ipop || true
+rm -rf /opt/ipop-vpn/ipop-venv
+for dir in $(find /opt/ipop-vpn/controller -type d -name __pycache__); do
+  rm -rf "$dir"
+done
+exit 0
+

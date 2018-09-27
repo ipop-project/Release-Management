@@ -1,8 +1,6 @@
 #!/bin/bash
 
-INSTALLATION_DIR=/opt/ipop-vpn
-
-cd "$INSTALLATION_DIR" 
+cd /opt/ipop-vpn
 pip3 install virtualenv
 virtualenv ipop-venv
 source ipop-venv/bin/activate
