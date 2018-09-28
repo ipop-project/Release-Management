@@ -4,8 +4,8 @@ The IPOP-VPN Debian package installs IPOP as a systemd service and is supported 
 1. Clone the `Release-Management` repo and use `Release-Management/Deployment/ipop-deb` as your base directory.
 2. Copy the `ipop-tincan` executable, and the `controller` folder into `ipop-vpn/opt/ipop-vpn`.
 3. Copy `config.json`, the template or completed file, into `ipop-vpn/etc/opt/ipop-vpn`.
-4. Update `/ipop-vpn/DEBIAN/control` with the appropriate architecture.   
-5. Invoke the command `echo "Architecture: $(dpkg --print-architecture)" >> ipop-vpn/DEBIAN/control && dpkg-deb --build ipop-vpn` to create the "ipo-vpn.deb" installer package
+4. Update `/ipop-vpn/DEBIAN/control` with the appropriate architecture running `echo "Architecture: $(dpkg --print-architecture)" >> ipop-vpn/DEBIAN/control`.   
+5. Invoke the command `dpkg-deb --build ipop-vpn` to create the "ipo-vpn.deb" installer package
 
 By default, the following files and directories are created:
 1. `/opt/ipop-vpn/ipop-tincan`
