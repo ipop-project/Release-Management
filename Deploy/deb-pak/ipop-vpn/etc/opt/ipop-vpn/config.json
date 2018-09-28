@@ -35,7 +35,7 @@
     "Overlays": {
       "1010001": {
         "Name": "Overlay1",
-        "Description": "IPOP v18 testbed"
+        "Description": "IPOP v18 overlay"
       }
     }
   },

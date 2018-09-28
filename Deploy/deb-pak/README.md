@@ -23,8 +23,3 @@ Additionally, use `systectl` to start/stop/restart/status ipop.
 
 IPOP is configured to be started automatically on reboot.
 
-## Known Issues
-The following issues are pending resolution:  
-1. Controller termination routines are not being invoked.  
-2. Active ports at service shutdown are not removed from the OVS bridge and the bridge will have to be manually removed/pruned of old ports before restart. Use the cmd `sudo ovs-vsctl del-br ipopbr0` to delete the bridge and remove it port configuration.   
-3. Removing the IPOP-VPN does not delete the `/opt/ipop-vpn/` directory as post installed files are still present.
