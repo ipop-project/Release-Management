@@ -2,7 +2,6 @@ Package: ipop-vpn
 Name: IPOP-VPN
 Version: 18.08.29
 Maintainer: <ipop@ipop-project.org>
-Architecture: all
 Homepage: http://ipop-project.org
 Depends: python3, python3-pip, iproute2, openvswitch-switch, bridge-utils
 Description: Virtual Overlay Networks.
