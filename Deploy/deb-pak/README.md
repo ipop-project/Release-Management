@@ -16,10 +16,9 @@ By default, the following files and directories are created:
 6. `/var/logs/ipop-vpn/ctrl.log`
 
 The installer has dependencies on, and will install `python3`, `python3-pip`, `iproute2`, `openvswitch-switch`, `bridge-utils`.  
-To install IPOP-VPN invoke `sudo -H atp isntall -y <path/to/installer>/ipop-vpn.deb`.  
+To install IPOP-VPN invoke `sudo -H apt install -y <path/to/installer>/ipop-vpn.deb`.  
 After installation but before starting IPOP, complete `config.json` by adding the XMPP credentials.  
 Next start IPOP using `sudo systemctl start ipop`.  
-Additionally, use `systectl` to start/stop/restart/status ipop.
+Additionally, use `systemctl` to start/stop/restart/status ipop.
 
 IPOP is configured to be started automatically on reboot.
-
