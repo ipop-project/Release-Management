@@ -3,7 +3,7 @@
 cat <<! > ipop-vpn/DEBIAN/control
 Package: ipop-vpn
 Name: IPOP-VPN
-Version: 18.b7
+Version: 18.rc1
 Maintainer: <ipop@ipop-project.org>
 Architecture: $(dpkg --print-architecture)
 Homepage: http://ipop-project.org
