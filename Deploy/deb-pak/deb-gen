@@ -13,6 +13,6 @@ Description: Virtual Overlay Networks.
 Tag: P2P Overlay Networking
 !
 
-dpkg-deb --build --root-owner-group ipop-vpn .
+dpkg-deb --build ipop-vpn .
 
 rm ipop-vpn/DEBIAN/control
