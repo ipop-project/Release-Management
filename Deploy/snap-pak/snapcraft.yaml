@@ -1,5 +1,5 @@
 name: ipopvpn
-version: '0.993'
+version: '0.995'
 summary: IPOP VPN, IP Over P2P
 description: |
   IPOP (IP-Over-P2P) is an open-source user-centric software virtual network allowing end users to define and create their own virtual private networks (VPNs). IPOP virtual networks provide end-to-end tunneling of IP or Ethernet over Tincan links setup and managed through a control API to create various software-defined VPN overlays.
@@ -28,6 +28,8 @@ apps:
     command: ovs-wrapper $SNAP/share/openvswitch/scripts/ovs-ctl --no-ovsdb-server --no-monitor --system-id=random start
     stop-command: ovs-wrapper $SNAP/share/openvswitch/scripts/ovs-ctl --no-ovsdb-server stop
     daemon: forking
+    passthrough:
+      after: [ovsdb-server]
     plugs:
       - network
       - network-bind
@@ -72,7 +74,7 @@ parts:
     source: https://github.com/ipop-project/Tincan.git
     source-commit: ac12c428808f417a9b4f9a8389e43d7fbb3ae6d0
     plugin: dump
-    stage-packages: [iproute2, openvswitch-switch, bridge-utils, openvswitch-common, net-tools]
+    stage-packages: [iproute2, openvswitch-switch, bridge-utils, openvswitch-common]
     stage: [trunk, external]
   3rd-party-libs:
     source: https://github.com/ipop-project/3rd-Party-Libs.git
@@ -95,7 +97,7 @@ parts:
     source: https://github.com/ipop-project/Controllers.git
     source-commit: d16c3810f1fb2d6335fbdebafff9211300e73192
     plugin: dump
-    stage-packages: [iproute2, openvswitch-switch, bridge-utils, openvswitch-common, net-tools]
+    stage-packages: [iproute2, openvswitch-switch, bridge-utils, openvswitch-common]
     after: [tincan]
     stage: [controller]
   patches:
@@ -138,4 +140,4 @@ parts:
   wrapper:
     source: conf
     plugin: dump
-    stage-packages: [iproute2, openvswitch-switch, bridge-utils, openvswitch-common, net-tools]
+    stage-packages: [iproute2, openvswitch-switch, bridge-utils, openvswitch-common]
