@@ -1,10 +1,10 @@
 #!/bin/bash
-
+mkdir -p /var/log/ipop-vpn/.pip_cache
 cd /opt/ipop-vpn
-pip3 --no-cache-dir install virtualenv
+pip3 --cache-dir /opt/ipop-vpn/.pip_cache install virtualenv
 virtualenv ipop-venv
 source ipop-venv/bin/activate
-pip3 install --no-cache-dir psutil sleekxmpp requests simplejson
+pip3 install --cache-dir /opt/ipop-vpn/.pip_cache psutil sleekxmpp requests simplejson
 deactivate
 systemctl daemon-reload
 systemctl enable ipop
