@@ -3,11 +3,11 @@
 cat <<! > ipop-vpn/DEBIAN/control
 Package: ipop-vpn
 Name: IPOP-VPN
-Version: 18
+Version: 20.0.20
 Maintainer: <ipop@ipop-project.org>
 Architecture: $(dpkg --print-architecture)
 Homepage: http://ipop-project.org
-Depends: python3, python3-pip, iproute2, openvswitch-switch, bridge-utils
+Depends: python3.6, python3.6-dev, python3.6-pip, iproute2, bridge-utils
 Description: Virtual Overlay Networks.
  IPOP (IP-Over-P2P) is an open-source user-centric software virtual network allowing end users to define and create their own virtual private networks (VPNs). IPOP virtual networks provide end-to-end tunneling of IP or Ethernet over Tincan links setup and managed through a control API to create various software-defined VPN overlays.
 Tag: P2P Overlay Networking

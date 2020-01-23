@@ -1,11 +1,10 @@
 {
   "CFx": {
     "Model": "Default",
-    "Overlays": [  "1010001" ]
+    "Overlays": [ "1010001" ]
   },
   "Logger": {
-    "Enabled": true,
-    "LogLevel": "DEBUG",
+    "LogLevel": "INFO",
     "Device": "File",
     "Directory": "/var/log/ipop-vpn/",
     "CtrlLogFileName": "ctrl.log",
@@ -13,9 +12,6 @@
     "MaxFileSize": 5000000,
     "MaxArchives": 5
   
-  },
-  "TincanInterface": {
-    "Enabled": true
   },
   "Signal": {
     "Enabled": true,
@@ -25,54 +21,44 @@
         "Port": "5222",
         "Username": "",
         "Password": "",
-        "AuthenticationMethod": "PASSWORD",
-        "AcceptUntrustedServer": true
+        "AuthenticationMethod": "PASSWORD"
       }
     }
   },
   "Topology": {
-    "Enabled": true,
+    "PeerDiscoveryCoalesce": 3,
     "Overlays": {
       "1010001": {
         "Name": "Overlay1",
-        "Description": "IPOP v18 overlay"
+        "Description": "IPOP v20 overlay",
+        "MaxSuccessors": 2,
+        "MaxOnDemandEdges": 1,
+        "MaxConcurrentEdgeSetup": 5,
+        "Role": "Switch"
       }
     }
   },
   "LinkManager": {
-    "Enabled": true,
+    "Dependencies": [ "Logger", "TincanInterface", "Signal" ],
     "Stun": ["stun.l.google.com:19302", "stun1.l.google.com:19302"],
     "Overlays": {
       "1010001": {
         "Type": "TUNNEL",
-        "TapName": "ipop"
+        "TapName": "tnl"
       }
     }
   },
   "BridgeController": {
-    "Enabled": true,
     "Overlays": {
       "1010001": {
-        "Type": "OVS",
-        "BridgeName": "ipopbr0",
+        "Type": "LXBR",
+        "BridgeName": "ipopbr",
         "IP4": "10.10.10.*",
         "PrefixLen": 24,
-        "MTU": 1410
+        "MTU": 1410,
+        "STP": true,
+        "AutoDelete": true
       }
     }
-  },
-  "OverlayVisualizer": {
-    "Enabled": false,
-    "TimerInterval": 15,
-    "WebServiceAddress": "***:5000"
-  },
-  "UsageReport": {
-    "Enabled": true
-  },
-  "Icc": {
-    "Enabled": false
-  },
-  "Broadcaster": {
-    "Enabled": false
   }
 }
