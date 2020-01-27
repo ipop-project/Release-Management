@@ -14,7 +14,7 @@ By default, the following files and directories are created:
 5. `/var/logs/ipop-vpn/tincan_log`
 6. `/var/logs/ipop-vpn/ctrl.log`
 
-The installer has dependencies on, and will install `python3.6`, `python3.6-dev`,  `python3.6-pip`, `iproute2`, `bridge-utils`.  
+The installer has dependencies on, and will install `python3.6`, `python3.6-dev`,  `python3-pip`, `iproute2`, `bridge-utils`.  
 To install IPOP-VPN invoke `sudo apt install -y <path/to>/ipop-vpn.deb`.  
 After installation but before starting IPOP, complete `config.json` by adding the XMPP credentials, setting the IP address, and applying other configurations as needed.  
 Then start IPOP using `sudo systemctl start ipop`.  
