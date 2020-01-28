@@ -3,7 +3,7 @@
 DKR=`command -v docker`
 [ -z "$DKR" ] && (echo "Cannot locate docker executable"; exit 1)
 
-prj=ipop-project
+prj=ipopproject
 ver=1.0
 ipopdkrfl=./ipop-vpn.Dockerfile
 fixbadproxy=./setup/99fixbadproxy
