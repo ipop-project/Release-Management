@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Requires running as the root user
+
 cp /etc/sysctl.conf /etc/sysctl.conf.`date +%F-%H%M%S`
 echo "kernel.keys.maxkeys=2000" >> /etc/sysctl.conf
 echo "fs.inotify.max_queued_events=1048576" >> /etc/sysctl.conf
