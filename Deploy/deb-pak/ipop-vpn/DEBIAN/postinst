@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export PATH=$PATH:/usr/local/bin
 cd /opt/ipop-vpn
 python3 -m pip --no-cache-dir install virtualenv
 virtualenv --python=python3 ipop-venv
